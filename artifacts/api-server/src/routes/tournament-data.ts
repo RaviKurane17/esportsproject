@@ -82,6 +82,7 @@ export const dashboardSummary: DashboardSummary = {
   liveCount: 0,
   completedCount: 0,
   totalPoints: 0,
+  nextMatch: null,
 };
 
 export const registeredTournaments: RegisteredTournament[] = [];
