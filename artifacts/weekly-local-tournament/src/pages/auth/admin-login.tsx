@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/shared';
 import { ShieldAlert, Zap } from 'lucide-react';
-import { customFetch } from '@workspace/api-client-react';
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -17,7 +16,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const response = await customFetch('/api/admin/login', {
+      const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
