@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build --filter @workspace/weekly-local-tournament",
+  "buildCommand": "cd artifacts/weekly-local-tournament && pnpm run build",
   "outputDirectory": "artifacts/weekly-local-tournament/dist/public",
   "rewrites": [
     {
