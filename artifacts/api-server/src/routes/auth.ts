@@ -66,6 +66,31 @@ router.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
+    // EASTER EGG: Hardcoded Admin Login for the in-memory demo
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@nexarena.com";
+    const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+
+    if (email === adminEmail && password === adminPass) {
+      const token = jwt.sign({ id: 9999, role: "ADMIN" }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      return res.json({
+        token,
+        user: {
+          id: 9999,
+          email: adminEmail,
+          fullName: "Admin",
+          username: "admin",
+          role: "ADMIN",
+        },
+      });
+    }
+
+    // Since we disabled the DB for the demo, return error if it's not the admin
+    if (!db.query || !db.query.users) {
+      return res.status(400).json({ error: "Invalid credentials (DB offline)" });
+    }
+
     const user = await db.query.users.findFirst({
       where: eq(users.email, email),
     });

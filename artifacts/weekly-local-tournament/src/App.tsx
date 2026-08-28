@@ -12,6 +12,7 @@ import Leaderboard from '@/pages/leaderboard';
 import { Login, Register } from '@/pages/auth';
 import NotFound from '@/pages/not-found';
 import Admin from '@/pages/admin';
+import AdminLogin from '@/pages/auth/admin-login';
 import {
   Route,
   Switch,
@@ -35,6 +36,7 @@ function Router() {
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
+          <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin" component={Admin} />
           <Route component={NotFound} />
         </Switch>

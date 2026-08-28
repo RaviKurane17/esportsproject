@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { getHealthCheckQueryKey, useHealthCheck } from '@workspace/api-client-react';
 import { ArrowRight, Bell, CalendarDays, ChevronDown, Gamepad2, LayoutGrid, Menu, ShieldCheck, Trophy, X, Zap } from 'lucide-react';
@@ -92,8 +92,26 @@ export function EmptyState({ title, copy, action }: { title: string; copy: strin
 }
 
 export function Shell({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
+  const [clickCount, setClickCount] = useState(0);
+  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setClickCount((prev) => prev + 1);
+    
+    if (clickTimeout.current) clearTimeout(clickTimeout.current);
+    clickTimeout.current = setTimeout(() => setClickCount(0), 2000); // reset if slow
+  };
+
+  useEffect(() => {
+    if (clickCount >= 5) {
+      setClickCount(0);
+      setLocation('/admin/login');
+    }
+  }, [clickCount, setLocation]);
+
   const health = useHealthCheck({ query: { staleTime: 60000, queryKey: getHealthCheckQueryKey() } });
   const links = [
     { href: '/', label: 'Discover', icon: LayoutGrid },
@@ -101,13 +119,16 @@ export function Shell({ children }: { children: ReactNode }) {
     { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
     { href: '/dashboard', label: 'My arena', icon: ShieldCheck },
   ];
-  const isAuth = location === '/login' || location === '/register';
+  const isAuth = location === '/login' || location === '/register' || location === '/admin/login';
   if (isAuth) return <div className="noise min-h-[100dvh] bg-background">{children}</div>;
   return (
     <div className="noise min-h-[100dvh] bg-background">
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col bg-secondary px-5 py-6 text-secondary-foreground transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-12 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)} data-testid="link-logo">
+          <Link href="/" className="flex items-center gap-3" onClick={(e) => {
+            handleLogoClick(e);
+            if (clickCount < 4) setOpen(false); 
+          }} data-testid="link-logo">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-secondary"><Zap size={19} fill="currentColor" /></span>
             <span className="font-display text-lg font-bold tracking-[-.04em]">weekly<span className="text-primary">.</span></span>
           </Link>
@@ -132,9 +153,12 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="md:pl-[248px]">
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-border bg-background/90 px-5 backdrop-blur-md md:px-10">
           <div className="flex items-center gap-3"><button className="md:hidden" onClick={() => setOpen(true)} data-testid="button-open-menu"><Menu size={22} /></button><p className="hidden font-mono-ui text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground sm:block">{location === '/' ? 'Weekly local tournament' : location.replace('/', '').replaceAll('-', ' ')}</p></div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => window.alert('You are all caught up.')} className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" data-testid="button-notifications"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" /></button>
-            <Link href="/dashboard" className="ml-1 flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors hover:bg-muted" data-testid="link-profile"><Avatar name="Mira Shah" size="sm" /><span className="hidden text-xs font-bold sm:inline">Mira Shah</span><ChevronDown size={14} className="text-muted-foreground" /></Link>
+          <div className="flex items-center gap-4">
+            <button onClick={() => window.alert('You are all caught up.')} className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" data-testid="button-notifications"><Bell size={18} /></button>
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="text-sm font-semibold text-muted-foreground hover:text-foreground">Log in</Link>
+              <Link href="/register" className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-[#e84b2d]">Sign up</Link>
+            </div>
           </div>
         </header>
         <main>{children}</main>
