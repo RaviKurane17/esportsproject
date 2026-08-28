@@ -1,0 +1,10 @@
+{
+  "buildCommand": "pnpm run build --filter @workspace/weekly-local-tournament",
+  "outputDirectory": "artifacts/weekly-local-tournament/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

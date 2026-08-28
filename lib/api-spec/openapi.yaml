@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Weekly Local Tournament API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: games
+    description: Supported games
+  - name: tournaments
+    description: Tournament discovery and details
+  - name: dashboard
+    description: Player dashboard summaries
+  - name: leaderboard
+    description: Competitive rankings
+  - name: registration
+    description: Tournament registration
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,143 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /games:
+    get:
+      operationId: listGames
+      tags: [games]
+      summary: List supported and coming soon games
+      responses:
+        "200":
+          description: Games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+  /tournaments:
+    get:
+      operationId: listTournaments
+      tags: [tournaments]
+      summary: Browse tournaments
+      parameters:
+        - in: query
+          name: game
+          schema:
+            type: string
+        - in: query
+          name: entryType
+          schema:
+            type: string
+            enum: [all, free, paid]
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tournament"
+  /tournaments/{id}:
+    get:
+      operationId: getTournament
+      tags: [tournaments]
+      summary: Get tournament details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tournament
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentDetail"
+        "404":
+          description: Tournament not found
+  /tournaments/{id}/register:
+    post:
+      operationId: registerForTournament
+      tags: [registration]
+      summary: Create a pending registration
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationInput"
+      responses:
+        "201":
+          description: Registration created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+        "400":
+          description: Registration validation failed
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get player dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/tournaments:
+    get:
+      operationId: getDashboardTournaments
+      tags: [dashboard]
+      summary: Get the current player's registered tournaments
+      responses:
+        "200":
+          description: Registered tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegisteredTournament"
+  /leaderboards:
+    get:
+      operationId: listLeaderboards
+      tags: [leaderboard]
+      summary: Get player leaderboard
+      parameters:
+        - in: query
+          name: game
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rankings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
 components:
   schemas:
     HealthStatus:
@@ -31,6 +177,161 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    Game:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        shortName: { type: string }
+        description: { type: string }
+        color: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, COMING_SOON]
+        playerCount: { type: number }
+      required: [id, name, slug, shortName, description, color, status, playerCount]
+    Tournament:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        game: { type: string }
+        gameSlug: { type: string }
+        organizer: { type: string }
+        entryType:
+          type: string
+          enum: [FREE, PAID]
+        entryFee: { type: number }
+        prizePool: { type: number }
+        currency: { type: string }
+        participants: { type: number }
+        maxParticipants: { type: number }
+        teamSize: { type: number }
+        format: { type: string }
+        date: { type: string }
+        time: { type: string }
+        region: { type: string }
+        status:
+          type: string
+          enum: [OPEN, FILLING_FAST, FULL, STARTING_SOON, LIVE, COMPLETED, CANCELLED]
+        registrationStatus:
+          type: string
+          enum: [AVAILABLE, REGISTERED, CLOSED]
+        banner: { type: string }
+        accent: { type: string }
+      required: [id, title, game, gameSlug, organizer, entryType, entryFee, prizePool, currency, participants, maxParticipants, teamSize, format, date, time, region, status, registrationStatus, banner, accent]
+    Prize:
+      type: object
+      properties:
+        place: { type: string }
+        amount: { type: number }
+        label: { type: string }
+      required: [place, amount, label]
+    TournamentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Tournament"
+        - type: object
+          properties:
+            registrationDeadline: { type: string }
+            eligibility: { type: array, items: { type: string } }
+            rules: { type: array, items: { type: string } }
+            prizes: { type: array, items: { $ref: "#/components/schemas/Prize" } }
+            schedule:
+              type: array
+              items:
+                $ref: "#/components/schemas/ScheduleItem"
+          required: [registrationDeadline, eligibility, rules, prizes, schedule]
+    ScheduleItem:
+      type: object
+      properties:
+        label: { type: string }
+        detail: { type: string }
+        state:
+          type: string
+          enum: [DONE, NEXT, LOCKED]
+      required: [label, detail, state]
+    RegistrationInput:
+      type: object
+      properties:
+        fullName: { type: string, minLength: 2 }
+        displayName: { type: string, minLength: 2 }
+        gameUid: { type: string, minLength: 2 }
+        gameUsername: { type: string, minLength: 2 }
+        email: { type: string }
+        phone: { type: string, minLength: 7 }
+        teamName: { type: ["string", "null"] }
+        confirmations:
+          type: array
+          items: { type: string }
+          minItems: 4
+      required: [fullName, displayName, gameUid, gameUsername, email, phone, confirmations]
+    Registration:
+      type: object
+      properties:
+        id: { type: string }
+        tournamentId: { type: string }
+        registrationId: { type: string }
+        status:
+          type: string
+          enum: [PENDING_PAYMENT, CONFIRMED]
+        tournamentTitle: { type: string }
+        matchDate: { type: string }
+        matchTime: { type: string }
+        totalAmount: { type: number }
+      required: [id, tournamentId, registrationId, status, tournamentTitle, matchDate, matchTime, totalAmount]
+    DashboardSummary:
+      type: object
+      properties:
+        playerName: { type: string }
+        gamerTag: { type: string }
+        avatar: { type: string }
+        upcomingCount: { type: number }
+        liveCount: { type: number }
+        completedCount: { type: number }
+        totalPoints: { type: number }
+        nextMatch:
+          type: ["object", "null"]
+          properties:
+            tournamentTitle: { type: string }
+            date: { type: string }
+            time: { type: string }
+            status: { type: string }
+          required: [tournamentTitle, date, time, status]
+      required: [playerName, gamerTag, avatar, upcomingCount, liveCount, completedCount, totalPoints, nextMatch]
+    RegisteredTournament:
+      type: object
+      properties:
+        id: { type: string }
+        tournamentId: { type: string }
+        title: { type: string }
+        game: { type: string }
+        registrationId: { type: string }
+        date: { type: string }
+        time: { type: string }
+        status: { type: string }
+        checkIn: { type: string }
+        roomDetails:
+          type: ["object", "null"]
+          properties:
+            roomId: { type: string }
+            password: { type: string }
+          required: [roomId, password]
+      required: [id, tournamentId, title, game, registrationId, date, time, status, checkIn, roomDetails]
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank: { type: number }
+        player: { type: string }
+        tag: { type: string }
+        game: { type: string }
+        matches: { type: number }
+        wins: { type: number }
+        points: { type: number }
+        score: { type: number }
+        trend:
+          type: string
+          enum: [UP, DOWN, SAME]
+        avatar: { type: string }
+      required: [rank, player, tag, game, matches, wins, points, score, trend, avatar]

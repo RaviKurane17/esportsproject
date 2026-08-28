@@ -1,0 +1,6 @@
+import { Link } from 'wouter';
+import { ArrowLeft, Radar } from 'lucide-react';
+
+export default function NotFound() {
+  return <div className="page-grid flex min-h-[calc(100dvh-72px)] items-center justify-center px-5 py-16"><div className="max-w-md text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-primary"><Radar size={30} /></div><p className="mt-8 font-mono-ui text-[10px] font-bold uppercase tracking-[.2em] text-primary">Out of bounds</p><h1 className="mt-3 font-display text-6xl font-bold tracking-[-.07em]">404<span className="text-primary">.</span></h1><p className="mt-4 text-sm leading-relaxed text-muted-foreground">This lobby does not exist, or it closed before you arrived. Head back to the arena and pick another match.</p><Link href="/" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-secondary-foreground transition-colors hover:bg-[#252f3b]" data-testid="link-404-home"><ArrowLeft size={16} /> Back to discovery</Link></div></div>;
+}

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nexarena-api
+    env: node
+    buildCommand: pnpm install && pnpm run build --filter @workspace/api-server
+    startCommand: pnpm run start --filter @workspace/api-server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
