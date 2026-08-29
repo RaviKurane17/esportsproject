@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, timestamp, integer, text } from "drizzle-orm/pg-core";
 import { tournaments } from "./tournaments";
 import { users } from "./users";
 import { teams } from "./teams";
@@ -10,6 +10,8 @@ export const results = pgTable("results", {
   tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   teamId: integer("team_id").references(() => teams.id),
+  registrationId: integer("registration_id"),
+  teamName: text("team_name"),
   rank: integer("rank").notNull(),
   kills: integer("kills").default(0),
   points: integer("points").default(0),
