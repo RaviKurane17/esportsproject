@@ -130,13 +130,17 @@ router.post("/tournaments", async (req, res) => {
     
     const dbGameName = gameMap[game] || game;
 
-    // Find the game by name
-    const gameRecord = await db.query.games.findFirst({
+    // Find the game by name or create it
+    let gameRecord = await db.query.games.findFirst({
       where: eq(games.name, dbGameName)
     });
 
     if (!gameRecord) {
-      return res.status(400).json({ error: "Game not found in database" });
+      const [newGame] = await db.insert(games).values({
+        name: dbGameName,
+        imageUrl: banner, // Use tournament banner as fallback
+      }).returning();
+      gameRecord = newGame;
     }
 
     // Parse date and time
