@@ -4,6 +4,16 @@ import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
+// Hardcoded admin login for MVP
+router.post("/admin/login", async (req, res) => {
+  const { email, password } = req.body;
+  if (email === 'admin@nexarena.com' && password === 'admin123') {
+    res.json({ token: 'fake-jwt-token-for-admin-mvp' });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
 // Get all registrations with their payment proof
 router.get("/admin/registrations", async (req, res) => {
   try {
