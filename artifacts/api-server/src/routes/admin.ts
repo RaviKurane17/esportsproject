@@ -110,7 +110,7 @@ router.post("/registrations/:id/approve", async (req, res) => {
 // Launch a new tournament
 router.post("/tournaments", async (req, res) => {
   try {
-    const { title, gameSlug, prizePool, entryFee, date, time, banner } = req.body;
+    const { title, game, prizePool, entryFee, date, time, banner } = req.body;
     
     // Find the real admin user
     const adminUser = await db.query.users.findFirst({
@@ -121,9 +121,18 @@ router.post("/tournaments", async (req, res) => {
       return res.status(500).json({ error: "Admin user not found" });
     }
 
-    // Find the game by slug
+    // Map frontend short names to database full names
+    const gameMap: Record<string, string> = {
+      "BGMI": "Battlegrounds Mobile India",
+      "Free Fire": "Free Fire",
+      "Ludo": "Ludo King"
+    };
+    
+    const dbGameName = gameMap[game] || game;
+
+    // Find the game by name
     const gameRecord = await db.query.games.findFirst({
-      where: eq(games.slug, gameSlug)
+      where: eq(games.name, dbGameName)
     });
 
     if (!gameRecord) {

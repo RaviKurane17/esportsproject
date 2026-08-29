@@ -44,27 +44,45 @@ router.get("/tournaments", async (req, res) => {
     .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id));
 
     // Map them to the frontend expected type (TournamentDetail)
-    const mapped = dbTournaments.map(row => ({
-      id: row.tournament.id.toString(),
-      title: row.tournament.name,
-      game: row.game.name,
-      gameSlug: row.game.slug,
-      organizer: "NEXARENA Official", // default
-      date: row.tournament.matchDate.toISOString().split("T")[0],
-      time: row.tournament.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-      entryFee: row.tournament.entryFee,
-      prizePool: `₹${row.tournament.prizePool / 100}`, // paise to INR
-      maxParticipants: row.tournament.maxSlots,
-      currentParticipants: 0, // Should count registrations in real life
-      banner: row.tournament.bannerUrl || "/banners/banner1.png",
-      status: row.tournament.status === 'REGISTRATION_OPEN' ? 'OPEN' : row.tournament.status,
-      entryType: row.tournament.entryFee > 0 ? "PAID" : "FREE",
-      currency: "INR",
-      teamSize: row.tournament.teamSize,
-      format: row.tournament.format || "Squad",
-      region: "India",
-      accent: row.game.color || "#000000"
-    }));
+    const mapped = dbTournaments.map(row => {
+      // Create slug and color mappings since they are missing from DB schema
+      const rawName = row.game.name.toLowerCase();
+      let gameSlug = rawName.replace(/ /g, '-');
+      let accent = "#000000";
+      
+      if (rawName.includes("battlegrounds") || rawName.includes("bgmi")) {
+        gameSlug = "bgmi";
+        accent = "#ffb547";
+      } else if (rawName.includes("free fire")) {
+        gameSlug = "free-fire";
+        accent = "#ff5c73";
+      } else if (rawName.includes("ludo")) {
+        gameSlug = "ludo";
+        accent = "#8f7cff";
+      }
+
+      return {
+        id: row.tournament.id.toString(),
+        title: row.tournament.name,
+        game: row.game.name,
+        gameSlug,
+        organizer: "NEXARENA Official", // default
+        date: row.tournament.matchDate.toISOString().split("T")[0],
+        time: row.tournament.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        entryFee: row.tournament.entryFee,
+        prizePool: `₹${row.tournament.prizePool / 100}`, // paise to INR
+        maxParticipants: row.tournament.maxSlots,
+        currentParticipants: 0, // Should count registrations in real life
+        banner: row.tournament.bannerUrl || "/banners/banner1.png",
+        status: row.tournament.status === 'REGISTRATION_OPEN' ? 'OPEN' : row.tournament.status,
+        entryType: row.tournament.entryFee > 0 ? "PAID" : "FREE",
+        currency: "INR",
+        teamSize: row.tournament.teamSize,
+        format: row.tournament.format || "Squad",
+        region: "India",
+        accent
+      };
+    });
 
     // Filter
     const filtered = mapped
@@ -108,12 +126,27 @@ router.get("/tournaments/:id", async (req, res) => {
 
     const t = dbRow.tournament;
     const g = dbRow.game;
+    
+    const rawName = g.name.toLowerCase();
+    let gameSlug = rawName.replace(/ /g, '-');
+    let accent = "#000000";
+    
+    if (rawName.includes("battlegrounds") || rawName.includes("bgmi")) {
+      gameSlug = "bgmi";
+      accent = "#ffb547";
+    } else if (rawName.includes("free fire")) {
+      gameSlug = "free-fire";
+      accent = "#ff5c73";
+    } else if (rawName.includes("ludo")) {
+      gameSlug = "ludo";
+      accent = "#8f7cff";
+    }
 
     const mapped = {
       id: t.id.toString(),
       title: t.name,
       game: g.name,
-      gameSlug: g.slug,
+      gameSlug,
       organizer: "NEXARENA Official",
       date: t.matchDate.toISOString().split("T")[0],
       time: t.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
@@ -128,7 +161,7 @@ router.get("/tournaments/:id", async (req, res) => {
       teamSize: t.teamSize,
       format: t.format || "Squad",
       region: "India",
-      accent: g.color || "#000000"
+      accent
     };
 
     res.json(GetTournamentResponse.parse(mapped));
