@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone, LogOut, Upload, Eye, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -169,16 +170,31 @@ export default function Admin() {
     }
   });
 
+  const [, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    setLocation('/admin-login');
+  };
+
   return (
     <div className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 md:py-14">
-      <div className="flex items-center gap-4 mb-10">
-        <div className="h-14 w-14 rounded-2xl bg-primary/20 text-primary border border-primary/30 flex items-center justify-center">
-          <ShieldAlert size={28} />
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-primary/20 text-primary border border-primary/30 flex items-center justify-center">
+            <ShieldAlert size={28} />
+          </div>
+          <div>
+            <h1 className="font-display text-4xl font-bold text-white">Admin Console</h1>
+            <p className="text-sm text-muted-foreground">Manage tournaments and verify manual UPI payments.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-display text-4xl font-bold text-white">Admin Console</h1>
-          <p className="text-sm text-muted-foreground">Manage tournaments and verify manual UPI payments.</p>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors"
+        >
+          <LogOut size={16} /> Logout
+        </button>
       </div>
 
       <div className="flex gap-4 mb-8 border-b border-white/10 pb-4 overflow-x-auto">
@@ -217,9 +233,9 @@ export default function Admin() {
             {registrations.length === 0 && !isLoading && <p className="text-muted-foreground">No registrations found.</p>}
             
             {registrations.map((reg: any) => (
-              <div key={reg.id} className="glass rounded-2xl p-6 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
+              <div key={reg.id} className="glass rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
                     <p className="font-bold text-lg text-white">{reg.teamName || reg.captainName}</p>
                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${
                       reg.status === 'PENDING_PAYMENT' ? 'bg-yellow-500/20 text-yellow-500' :
@@ -229,41 +245,52 @@ export default function Admin() {
                       {reg.status}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">WhatsApp: <span className="text-white">{reg.whatsapp}</span> | IGN: <span className="text-white">{reg.inGameId}</span></p>
-                  <p className="text-sm text-muted-foreground mb-1">Tournament: <span className="text-white">{reg.tournamentName}</span></p>
-                  
                   {reg.payment && (
-                    <p className="text-sm text-muted-foreground">UTR: <span className="text-primary font-mono-ui tracking-widest">{reg.payment.utrNumber}</span></p>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  {reg.payment && (
-                    <div className="text-right mr-6">
+                    <div className="text-right">
                       <p className="text-xs text-muted-foreground uppercase">Amount Paid</p>
                       <p className="font-display font-bold text-2xl text-secondary">₹{reg.payment.amount}</p>
                     </div>
                   )}
-                  
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
+                  <p>WhatsApp: <span className="text-white">{reg.whatsapp}</span></p>
+                  <p>IGN: <span className="text-white">{reg.inGameId}</span></p>
+                  <p>Tournament: <span className="text-white">{reg.tournamentName}</span></p>
+                  {reg.payment && (
+                    <p>UTR: <span className="text-primary font-mono-ui tracking-widest">{reg.payment.utrNumber}</span></p>
+                  )}
+                </div>
+
+                {/* Payment Screenshot Preview */}
+                {reg.payment?.screenshotUrl && (
+                  <div className="mb-4 rounded-xl border border-white/10 bg-black/30 p-3">
+                    <p className="text-xs uppercase text-muted-foreground font-bold mb-2 flex items-center gap-2"><Image size={14} /> Payment Screenshot</p>
+                    <img src={reg.payment.screenshotUrl} alt="Payment proof" className="max-h-48 rounded-lg border border-white/10 object-contain" />
+                    <a href={reg.payment.screenshotUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+                      <Eye size={12} /> View Full Size
+                    </a>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t border-white/10">
                   {reg.status === 'PENDING_PAYMENT' && (
-                    <div className="flex gap-2">
+                    <>
                       <button 
                         onClick={() => approveMutation.mutate(reg.id)}
                         disabled={approveMutation.isPending}
-                        className="h-10 w-10 rounded-xl bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 flex items-center justify-center transition-colors disabled:opacity-50"
-                        title="Approve & Confirm Squad"
+                        className="flex items-center gap-2 bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
                       >
-                        <CheckCircle size={20} />
+                        <CheckCircle size={16} /> Approve
                       </button>
-                      <button className="h-10 w-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500/40 border border-red-500/30 flex items-center justify-center transition-colors" title="Reject">
-                        <XCircle size={20} />
+                      <button className="flex items-center gap-2 bg-red-500/20 text-red-500 hover:bg-red-500/40 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">
+                        <XCircle size={16} /> Reject
                       </button>
-                      {reg.payment?.screenshotUrl && (
-                        <a href={reg.payment.screenshotUrl} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors" title="View Payment Screenshot">
-                          <FileText size={20} />
-                        </a>
-                      )}
-                    </div>
+                    </>
+                  )}
+                  {reg.status === 'CONFIRMED' && (
+                    <span className="flex items-center gap-2 text-green-500 text-xs font-bold"><CheckCircle size={14} /> Verified & Confirmed</span>
                   )}
                 </div>
               </div>
@@ -443,16 +470,31 @@ export default function Admin() {
                </div>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Custom UPI ID</label>
-                 <input value={formData.upiId} onChange={e => setFormData({...formData, upiId: e.target.value})} placeholder="e.g. host@upi" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
-               </div>
-               <div>
-                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Payment QR Code (Optional)</label>
-                 <input type="file" accept="image/*" onChange={e => setFormData({...formData, paymentQrFile: e.target.files?.[0] || null})} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-primary transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary/80" />
-               </div>
-             </div>
+             {/* Payment Collection Section */}
+             <div className="bg-black/40 rounded-2xl border border-primary/20 p-6">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wider mb-4">
+                  <Upload size={16} /> Payment Collection Setup
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">UPI ID</label>
+                    <input value={formData.upiId} onChange={e => setFormData({...formData, upiId: e.target.value})} placeholder="e.g. yourname@upi" className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Players will see this UPI ID during registration.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Upload Payment QR Scanner</label>
+                    <div className="relative">
+                      <input type="file" accept="image/*" onChange={e => setFormData({...formData, paymentQrFile: e.target.files?.[0] || null})} className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-primary transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary/80" />
+                    </div>
+                    {formData.paymentQrFile && (
+                      <div className="mt-3 flex items-center gap-2 text-xs text-green-500">
+                        <CheckCircle size={12} /> {formData.paymentQrFile.name} selected
+                      </div>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">Upload your UPI QR code image. Players will scan this to pay.</p>
+                  </div>
+                </div>
+              </div>
 
              <div>
                <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Banner Image</label>
