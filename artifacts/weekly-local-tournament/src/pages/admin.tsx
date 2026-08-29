@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone, LogOut, Upload, Eye, Image } from 'lucide-react';
+import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone, LogOut, Upload, Eye, Image, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -45,6 +45,22 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminRegistrations'] });
     }
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      if (!window.confirm("Are you sure you want to permanently delete this registration?")) {
+        throw new Error("Cancelled by user");
+      }
+      const res = await fetch(`/api/admin/registrations/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminRegistrations'] });
+    }
+  });
+
+  const [showPastRegistrations, setShowPastRegistrations] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -222,18 +238,35 @@ export default function Admin() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Pending Verification</h2>
-            <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-xl px-4 py-2">
-              <Search size={16} className="text-muted-foreground" />
-              <input placeholder="Search UTR or Username..." className="bg-transparent border-none outline-none text-sm text-white w-48" />
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-white transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={showPastRegistrations} 
+                  onChange={(e) => setShowPastRegistrations(e.target.checked)} 
+                  className="accent-primary w-4 h-4 rounded"
+                />
+                Show Past Tournaments
+              </label>
+              <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-xl px-4 py-2">
+                <Search size={16} className="text-muted-foreground" />
+                <input placeholder="Search UTR or Username..." className="bg-transparent border-none outline-none text-sm text-white w-48" />
+              </div>
             </div>
           </div>
           
           <div className="grid gap-4">
             {isLoading && <p className="text-muted-foreground">Loading registrations...</p>}
-            {registrations.length === 0 && !isLoading && <p className="text-muted-foreground">No registrations found.</p>}
             
-            {registrations.map((reg: any) => (
-              <div key={reg.id} className="glass rounded-2xl p-6">
+            {(() => {
+              const visibleRegistrations = registrations.filter((reg: any) => showPastRegistrations || reg.tournamentStatus !== 'COMPLETED');
+              
+              if (visibleRegistrations.length === 0 && !isLoading) {
+                return <p className="text-muted-foreground">No registrations found for active tournaments.</p>;
+              }
+              
+              return visibleRegistrations.map((reg: any) => (
+                <div key={reg.id} className="glass rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <p className="font-bold text-lg text-white">{reg.teamName || reg.captainName}</p>
@@ -274,24 +307,34 @@ export default function Admin() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 pt-3 border-t border-white/10">
-                  {reg.status === 'PENDING_PAYMENT' && (
-                    <>
-                      <button 
-                        onClick={() => approveMutation.mutate(reg.id)}
-                        disabled={approveMutation.isPending}
-                        className="flex items-center gap-2 bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
-                      >
-                        <CheckCircle size={16} /> Approve
-                      </button>
-                      <button className="flex items-center gap-2 bg-red-500/20 text-red-500 hover:bg-red-500/40 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">
-                        <XCircle size={16} /> Reject
-                      </button>
-                    </>
-                  )}
-                  {reg.status === 'CONFIRMED' && (
-                    <span className="flex items-center gap-2 text-green-500 text-xs font-bold"><CheckCircle size={14} /> Verified & Confirmed</span>
-                  )}
+                <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                  <div className="flex gap-2">
+                    {reg.status === 'PENDING_PAYMENT' && (
+                      <>
+                        <button 
+                          onClick={() => approveMutation.mutate(reg.id)}
+                          disabled={approveMutation.isPending}
+                          className="flex items-center gap-2 bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                        >
+                          <CheckCircle size={16} /> Approve
+                        </button>
+                        <button className="flex items-center gap-2 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/40 border border-yellow-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">
+                          <XCircle size={16} /> Reject
+                        </button>
+                      </>
+                    )}
+                    {reg.status === 'CONFIRMED' && (
+                      <span className="flex items-center gap-2 text-green-500 text-xs font-bold"><CheckCircle size={14} /> Verified & Confirmed</span>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={() => deleteMutation.mutate(reg.id)}
+                    disabled={deleteMutation.isPending}
+                    className="flex items-center gap-1.5 text-xs font-bold text-red-500/70 hover:text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
                 </div>
               </div>
             ))}

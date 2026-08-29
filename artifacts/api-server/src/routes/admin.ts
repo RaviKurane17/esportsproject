@@ -67,6 +67,7 @@ router.get("/registrations", async (req, res) => {
         whatsapp: reg.contactWhatsApp,
         inGameId: reg.inGameId,
         tournamentName: tournament?.name || "Unknown Tournament",
+        tournamentStatus: tournament?.status || "UNKNOWN",
         status: reg.status,
         createdAt: reg.createdAt,
         payment: payment ? {
@@ -104,6 +105,24 @@ router.post("/registrations/:id/approve", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to approve registration" });
+  }
+});
+
+// Delete registration
+router.delete("/registrations/:id", async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id);
+    
+    // Delete payment first due to foreign key constraint
+    await db.delete(payments).where(eq(payments.registrationId, registrationId));
+    
+    // Delete registration
+    await db.delete(registrations).where(eq(registrations.id, registrationId));
+
+    res.json({ success: true, message: "Registration deleted successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete registration" });
   }
 });
 
