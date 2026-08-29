@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 // Realistic admin login using database
-router.post("/admin/login", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -42,7 +42,7 @@ router.post("/admin/login", async (req, res) => {
 });
 
 // Get all registrations with their payment proof
-router.get("/admin/registrations", async (req, res) => {
+router.get("/registrations", async (req, res) => {
   try {
     const allRegistrations = await db.query.registrations.findMany({
       orderBy: [desc(registrations.createdAt)],
@@ -82,7 +82,7 @@ router.get("/admin/registrations", async (req, res) => {
 });
 
 // Approve registration
-router.post("/admin/registrations/:id/approve", async (req, res) => {
+router.post("/registrations/:id/approve", async (req, res) => {
   try {
     const registrationId = parseInt(req.params.id);
     
