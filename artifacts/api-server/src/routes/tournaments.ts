@@ -165,6 +165,8 @@ router.get("/tournaments/:id", async (req, res) => {
       region: "India",
       accent,
       registrationDeadline: t.registrationCloses?.toISOString().split("T")[0] || t.matchDate.toISOString().split("T")[0],
+      upiId: t.upiId,
+      paymentQrUrl: t.paymentQrUrl,
       eligibility: ["Mobile players only", "Must be on Discord"],
       rules: ["No emulators", "Record POV"],
       prizes: [
@@ -184,7 +186,7 @@ router.get("/tournaments/:id", async (req, res) => {
   }
 });
 
-import { games as gamesTable, tournaments as tournamentsTable, registrations as registrationsTable, payments as paymentsTable, db } from "@workspace/db";
+import { games as gamesTable, tournaments as tournamentsTable, registrations as registrationsTable, payments as paymentsTable, results as resultsTable, db } from "@workspace/db";
 
 router.post("/tournaments/:id/register", async (req, res) => {
   try {
@@ -288,6 +290,21 @@ router.get("/leaderboards", (req, res) => {
   const query = ListLeaderboardsQueryParams.parse(req.query);
   const filtered = query.game ? leaderboard.filter((entry) => entry.game.toLowerCase() === query.game?.toLowerCase()) : leaderboard;
   res.json(ListLeaderboardsResponse.parse(filtered));
+});
+
+// Get tournament results
+router.get("/:id/results", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const tournamentResults = await db.query.results.findMany({
+      where: eq(resultsTable.tournamentId, tournamentId),
+      orderBy: (results, { asc }) => [asc(results.rank)]
+    });
+    res.json(tournamentResults);
+  } catch (error) {
+    console.error("Failed to fetch results:", error);
+    res.status(500).json({ error: "Failed to fetch results" });
+  }
 });
 
 export default router;

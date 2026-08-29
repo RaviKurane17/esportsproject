@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Filter, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Filter, Search, SlidersHorizontal, X, Megaphone } from 'lucide-react';
 import { useListGames, useListTournaments } from '@workspace/api-client-react';
 import { Button, EmptyState, ErrorState, Skeleton, TournamentCard } from '@/components/shared';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Tournaments() {
   const [location, setLocation] = useLocation();
@@ -13,6 +14,7 @@ export default function Tournaments() {
   const [entry, setEntry] = useState<'all' | 'free' | 'paid'>('all');
   const [status, setStatus] = useState('OPEN');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeAnnouncement, setActiveAnnouncement] = useState(0);
   
   const params = useMemo(() => ({ 
     ...(game ? { game } : {}), 
@@ -24,6 +26,14 @@ export default function Tournaments() {
   const gamesQuery = useListGames();
   const tournamentsQuery = useListTournaments(params);
   const tournaments = tournamentsQuery.data ?? [];
+
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['publicAnnouncements'],
+    queryFn: async () => {
+      const res = await fetch('/api/announcements');
+      return res.json();
+    }
+  });
   
   const clearFilters = () => { 
     setSearch(''); 
@@ -41,6 +51,22 @@ export default function Tournaments() {
         <div className="absolute top-[-10%] right-[10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute top-[40%] left-[-10%] w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[150px]" />
       </div>
+
+      {announcements.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-8 overflow-hidden rounded-2xl bg-black/40 border border-primary/30 p-4 relative"
+        >
+          <div className="absolute top-0 left-0 w-2 h-full bg-primary" />
+          <div className="flex items-start gap-4">
+            <Megaphone size={24} className="text-primary mt-1 shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-bold text-white mb-1">{announcements[0].title}</h3>
+              <p className="text-sm text-muted-foreground">{announcements[0].content}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

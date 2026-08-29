@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ShieldAlert, CheckCircle, XCircle, Search, FileText } from 'lucide-react';
+import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { uploadImage } from '@/lib/utils';
+
 export default function Admin() {
-  const [tab, setTab] = useState<'payments' | 'tournaments'>('payments');
+  const [tab, setTab] = useState<'payments' | 'tournaments' | 'announcements'>('payments');
   const queryClient = useQueryClient();
 
   const { data: registrations = [], isLoading } = useQuery({
@@ -12,6 +14,22 @@ export default function Admin() {
     queryFn: async () => {
       const res = await fetch('/api/admin/registrations');
       if (!res.ok) throw new Error("Failed to fetch registrations");
+      return res.json();
+    }
+  });
+
+  const { data: announcementsList = [] } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const res = await fetch('/api/announcements');
+      return res.json();
+    }
+  });
+
+  const { data: allTournaments = [] } = useQuery({
+    queryKey: ['allTournamentsAdmin'],
+    queryFn: async () => {
+      const res = await fetch('/api/tournaments');
       return res.json();
     }
   });
@@ -34,11 +52,21 @@ export default function Admin() {
     prizePool: 0,
     date: '',
     time: '',
-    banner: '/banners/banner1.png'
+    banner: '/banners/banner1.png',
+    maxSlots: 100,
+    teamSize: 4,
+    format: 'Squad',
+    upiId: 'nexarena@upi',
+    paymentQrFile: null as File | null
   });
   
   const createTournament = useMutation({
     mutationFn: async (data: typeof formData) => {
+      let paymentQrUrl = '';
+      if (data.paymentQrFile) {
+        paymentQrUrl = await uploadImage(data.paymentQrFile);
+      }
+
       const res = await fetch('/api/admin/tournaments', {
         method: 'POST',
         headers: {
@@ -47,13 +75,11 @@ export default function Admin() {
         },
         body: JSON.stringify({
           ...data,
+          paymentQrUrl,
           gameSlug: data.game.toLowerCase().replace(' ', '-'),
           organizer: 'NEXARENA Official',
           entryType: data.entryFee > 0 ? 'PAID' : 'FREE',
           currency: 'INR',
-          maxParticipants: 100,
-          teamSize: 1,
-          format: 'Solo TPP',
           region: 'India',
           status: 'OPEN',
           accent: '#9900ff'
@@ -65,6 +91,81 @@ export default function Admin() {
     onSuccess: () => {
       alert("Tournament created successfully!");
       queryClient.invalidateQueries();
+    }
+  });
+
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '' });
+
+  const createAnnouncement = useMutation({
+    mutationFn: async (data: typeof announcementForm) => {
+      const res = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fake-token-for-now' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error("Failed to post announcement");
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("Announcement posted successfully!");
+      setAnnouncementForm({ title: '', content: '' });
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+    }
+  });
+
+  const [winnerForm, setWinnerForm] = useState<{tournamentId: string | null, winners: {teamName: string, rank: number}[]}>({
+    tournamentId: null,
+    winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}]
+  });
+
+  const [roomForm, setRoomForm] = useState<{tournamentId: string | null, roomId: string, roomPassword: string}>({
+    tournamentId: null,
+    roomId: '',
+    roomPassword: ''
+  });
+
+  const updateRoom = useMutation({
+    mutationFn: async (data: typeof roomForm) => {
+      const res = await fetch(`/api/admin/tournaments/${data.tournamentId}/room`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: data.roomId, roomPassword: data.roomPassword })
+      });
+      if (!res.ok) throw new Error("Failed to update room");
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("Room credentials updated!");
+      setRoomForm({ tournamentId: null, roomId: '', roomPassword: '' });
+      queryClient.invalidateQueries({ queryKey: ['allTournamentsAdmin'] });
+    }
+  });
+
+  const [notifyTournamentId, setNotifyTournamentId] = useState<string | null>(null);
+  const notifyPlayersQuery = useQuery({
+    queryKey: ['tournamentPlayers', notifyTournamentId],
+    queryFn: async () => {
+      if (!notifyTournamentId) return [];
+      const res = await fetch(`/api/admin/tournaments/${notifyTournamentId}/players`);
+      return res.json();
+    },
+    enabled: !!notifyTournamentId
+  });
+
+  const completeTournament = useMutation({
+    mutationFn: async (data: typeof winnerForm) => {
+      const res = await fetch(`/api/admin/tournaments/${data.tournamentId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fake-token-for-now' },
+        body: JSON.stringify({ winners: data.winners })
+      });
+      if (!res.ok) throw new Error("Failed to complete tournament");
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("Tournament completed!");
+      setWinnerForm({ tournamentId: null, winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}] });
+      queryClient.invalidateQueries({ queryKey: ['allTournamentsAdmin'] });
     }
   });
 
@@ -80,18 +181,24 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-8 border-b border-white/10 pb-4">
+      <div className="flex gap-4 mb-8 border-b border-white/10 pb-4 overflow-x-auto">
         <button 
           onClick={() => setTab('payments')} 
-          className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'payments' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
+          className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${tab === 'payments' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
         >
           Verify Squad Registrations
         </button>
         <button 
           onClick={() => setTab('tournaments')} 
-          className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'tournaments' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
+          className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${tab === 'tournaments' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
         >
           Manage Tournaments
+        </button>
+        <button 
+          onClick={() => setTab('announcements')} 
+          className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${tab === 'announcements' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
+        >
+          Announcements
         </button>
       </div>
 
@@ -167,6 +274,121 @@ export default function Admin() {
 
       {tab === 'tournaments' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-8 glass rounded-2xl max-w-2xl mx-auto">
+           {/* Active Tournaments List */}
+           <div className="mb-12 border-b border-white/10 pb-12">
+             <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Active Tournaments</h2>
+             <div className="grid gap-4">
+               {allTournaments.filter((t: any) => t.status !== 'COMPLETED').map((t: any) => (
+                 <div key={t.id} className="bg-black/30 p-5 rounded-xl border border-white/5 flex flex-col gap-4">
+                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                     <div>
+                       <p className="font-bold text-white text-lg">{t.title}</p>
+                       <p className="text-sm text-muted-foreground">{t.game} | {t.date} {t.time}</p>
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                       <button onClick={() => setRoomForm({...roomForm, tournamentId: t.id, roomId: t.roomId || '', roomPassword: t.roomPassword || ''})} className="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                         Manage Room
+                       </button>
+                       <button onClick={() => setNotifyTournamentId(notifyTournamentId === t.id ? null : t.id)} className="bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                         Notify Players
+                       </button>
+                       <button onClick={() => setWinnerForm({...winnerForm, tournamentId: t.id})} className="bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+                         Declare Winners
+                       </button>
+                     </div>
+                   </div>
+                   
+                   {/* Room Credentials Form */}
+                   {roomForm.tournamentId === t.id && (
+                     <div className="bg-black/40 p-4 rounded-xl border border-blue-500/30">
+                       <p className="text-xs font-bold uppercase text-blue-400 mb-3">Room Credentials</p>
+                       <div className="flex gap-2 mb-4">
+                         <input placeholder="Room ID" value={roomForm.roomId} onChange={e => setRoomForm({...roomForm, roomId: e.target.value})} className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white flex-1" />
+                         <input placeholder="Password" value={roomForm.roomPassword} onChange={e => setRoomForm({...roomForm, roomPassword: e.target.value})} className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white flex-1" />
+                       </div>
+                       <div className="flex gap-2">
+                         <button onClick={() => updateRoom.mutate(roomForm)} className="bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-600">Save Room</button>
+                         <button onClick={() => setRoomForm({...roomForm, tournamentId: null})} className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/20">Cancel</button>
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Notify Players Box */}
+                   {notifyTournamentId === t.id && (
+                     <div className="bg-black/40 p-4 rounded-xl border border-yellow-500/30">
+                       <p className="text-xs font-bold uppercase text-yellow-500 mb-3">Send Credentials to Players</p>
+                       {notifyPlayersQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading players...</p> : (
+                         <div>
+                           <p className="text-sm text-muted-foreground mb-4">Total Confirmed Squads: <span className="text-white font-bold">{notifyPlayersQuery.data?.length || 0}</span></p>
+                           
+                           {notifyPlayersQuery.data?.length > 0 && (
+                             <div className="flex flex-col gap-4">
+                               {/* Email Mailto Link */}
+                               {(() => {
+                                 const emails = notifyPlayersQuery.data.map((p: any) => p.contactEmail).filter(Boolean).join(',');
+                                 const subject = encodeURIComponent(`Room Details: ${t.title}`);
+                                 const body = encodeURIComponent(`Match is starting soon!\n\nRoom ID: ${t.roomId || 'Not set yet'}\nPassword: ${t.roomPassword || 'Not set yet'}\n\nGood luck!`);
+                                 return (
+                                   <a href={`mailto:?bcc=${emails}&subject=${subject}&body=${body}`} className="w-full bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-4 py-3 rounded-lg text-center transition-colors">
+                                     ✉️ Open Mail Client (BCC All)
+                                   </a>
+                                 );
+                               })()}
+
+                               {/* WhatsApp Copy-Paste List */}
+                               <div className="bg-black/60 p-3 rounded-lg border border-white/5">
+                                 <p className="text-xs text-muted-foreground mb-2">WhatsApp Numbers (Copy & Paste)</p>
+                                 <div className="max-h-24 overflow-y-auto text-sm text-white font-mono-ui">
+                                   {notifyPlayersQuery.data.map((p: any) => p.contactWhatsApp).filter(Boolean).join(', ')}
+                                 </div>
+                               </div>
+                               
+                               <div className="bg-black/60 p-3 rounded-lg border border-white/5">
+                                 <p className="text-xs text-muted-foreground mb-2">Message Template (Copy & Paste)</p>
+                                 <div className="text-sm text-white whitespace-pre-wrap font-mono-ui">
+{`🚨 MATCH STARTING SOON 🚨\n\nTournament: ${t.title}\n\nRoom ID: ${t.roomId || 'TBA'}\nPassword: ${t.roomPassword || 'TBA'}\n\nPlease join the room. All the best!`}
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       )}
+                     </div>
+                   )}
+                   
+                   {/* Declare Winners Form */}
+                   {winnerForm.tournamentId === t.id && (
+                     <div className="bg-black/40 p-4 rounded-xl border border-green-500/30">
+                       <p className="text-xs font-bold uppercase text-green-500 mb-3">Declare Winners</p>
+                       <div className="flex flex-col gap-2 mb-4">
+                         {[0, 1, 2].map(idx => (
+                           <input 
+                             key={idx}
+                             placeholder={`${idx+1}${idx===0?'st':idx===1?'nd':'rd'} Place Team Name`}
+                             value={winnerForm.winners[idx].teamName}
+                             onChange={e => {
+                               const newWinners = [...winnerForm.winners];
+                               newWinners[idx].teamName = e.target.value;
+                               setWinnerForm({...winnerForm, winners: newWinners});
+                             }}
+                             className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-primary w-full"
+                           />
+                         ))}
+                       </div>
+                       <div className="flex gap-2">
+                         <button onClick={() => completeTournament.mutate(winnerForm)} className="bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex-1 hover:bg-green-600">Submit Results</button>
+                         <button onClick={() => setWinnerForm({...winnerForm, tournamentId: null})} className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/20">Cancel</button>
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               ))}
+               {allTournaments.filter((t: any) => t.status !== 'COMPLETED').length === 0 && (
+                 <p className="text-muted-foreground text-sm">No active tournaments.</p>
+               )}
+             </div>
+           </div>
+
            <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Create New Tournament</h2>
            <form onSubmit={(e) => { e.preventDefault(); createTournament.mutate(formData); }} className="grid gap-6">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,6 +428,32 @@ export default function Admin() {
                </div>
              </div>
 
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div>
+                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Max Slots (Teams/Players)</label>
+                 <input required type="number" value={formData.maxSlots} onChange={e => setFormData({...formData, maxSlots: Number(e.target.value)})} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
+               </div>
+               <div>
+                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Team Size</label>
+                 <input required type="number" value={formData.teamSize} onChange={e => setFormData({...formData, teamSize: Number(e.target.value)})} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
+               </div>
+               <div>
+                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Format</label>
+                 <input required value={formData.format} onChange={e => setFormData({...formData, format: e.target.value})} placeholder="e.g. Squad TPP" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div>
+                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Custom UPI ID</label>
+                 <input value={formData.upiId} onChange={e => setFormData({...formData, upiId: e.target.value})} placeholder="e.g. host@upi" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" />
+               </div>
+               <div>
+                 <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Payment QR Code (Optional)</label>
+                 <input type="file" accept="image/*" onChange={e => setFormData({...formData, paymentQrFile: e.target.files?.[0] || null})} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-primary transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary/80" />
+               </div>
+             </div>
+
              <div>
                <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Banner Image</label>
                <div className="flex flex-wrap gap-4 mb-2">
@@ -222,6 +470,38 @@ export default function Admin() {
                {createTournament.isPending ? 'Creating...' : 'Launch Tournament'}
              </button>
            </form>
+        </motion.div>
+      )}
+
+      {tab === 'announcements' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-8 glass rounded-2xl max-w-2xl mx-auto">
+           <h2 className="flex items-center gap-3 text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4"><Megaphone className="text-primary"/> Post Announcement</h2>
+           <form onSubmit={(e) => { e.preventDefault(); createAnnouncement.mutate(announcementForm); }} className="grid gap-6">
+             <div>
+               <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Announcement Title</label>
+               <input required value={announcementForm.title} onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" placeholder="e.g. Server Maintenance" />
+             </div>
+             <div>
+               <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Message</label>
+               <textarea required value={announcementForm.content} onChange={e => setAnnouncementForm({...announcementForm, content: e.target.value})} rows={4} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" placeholder="What do you want to tell the players?" />
+             </div>
+             <button disabled={createAnnouncement.isPending} type="submit" className="mt-2 px-6 py-4 bg-primary text-white font-bold rounded-xl shadow-[0_0_15px_hsla(var(--primary),0.3)] hover:scale-[1.02] transition-all disabled:opacity-50">
+               {createAnnouncement.isPending ? 'Posting...' : 'Post Announcement'}
+             </button>
+           </form>
+
+           <div className="mt-10 pt-6 border-t border-white/10">
+             <h3 className="font-bold text-white mb-4">Recent Announcements</h3>
+             <div className="space-y-4">
+               {announcementsList.length === 0 && <p className="text-muted-foreground text-sm">No announcements posted yet.</p>}
+               {announcementsList.map((ann: any) => (
+                 <div key={ann.id} className="bg-black/30 p-4 rounded-xl border border-white/5">
+                   <p className="font-bold text-white">{ann.title}</p>
+                   <p className="text-sm text-muted-foreground mt-1">{ann.content}</p>
+                 </div>
+               ))}
+             </div>
+           </div>
         </motion.div>
       )}
     </div>

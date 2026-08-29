@@ -94,7 +94,9 @@ export const GetTournamentResponse = zod.object({
   "status": zod.enum(['OPEN', 'FILLING_FAST', 'FULL', 'STARTING_SOON', 'LIVE', 'COMPLETED', 'CANCELLED']),
   "registrationStatus": zod.enum(['AVAILABLE', 'REGISTERED', 'CLOSED']),
   "banner": zod.string(),
-  "accent": zod.string()
+  "accent": zod.string(),
+  "upiId": zod.string().optional().nullable(),
+  "paymentQrUrl": zod.string().optional().nullable()
 }).and(zod.object({
   "registrationDeadline": zod.string(),
   "eligibility": zod.array(zod.string()),

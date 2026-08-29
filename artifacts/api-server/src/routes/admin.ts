@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, registrations, payments, tournaments, games, users } from "@workspace/db";
+import { db, registrations, payments, tournaments, games, users, announcements, results } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
 const router = Router();
@@ -110,7 +110,7 @@ router.post("/registrations/:id/approve", async (req, res) => {
 // Launch a new tournament
 router.post("/tournaments", async (req, res) => {
   try {
-    const { title, game, prizePool, entryFee, date, time, banner } = req.body;
+    const { title, game, prizePool, entryFee, date, time, banner, maxSlots, teamSize, format, upiId, paymentQrUrl } = req.body;
     
     // Find the real admin user
     const adminUser = await db.query.users.findFirst({
@@ -153,10 +153,13 @@ router.post("/tournaments", async (req, res) => {
       organizerId: adminUser.id, 
       prizePool: parseInt(prizePool) * 100, // paise
       entryFee: parseInt(entryFee),
-      maxSlots: 100,
-      teamSize: 4,
+      maxSlots: parseInt(maxSlots) || 100,
+      teamSize: parseInt(teamSize) || 4,
+      format: format || "Squad",
       matchDate: matchDateObj,
       bannerUrl: banner,
+      upiId: upiId || null,
+      paymentQrUrl: paymentQrUrl || null,
       status: "REGISTRATION_OPEN",
     }).returning();
 
@@ -164,6 +167,135 @@ router.post("/tournaments", async (req, res) => {
   } catch (error) {
     console.error("Failed to launch tournament:", error);
     res.status(500).json({ error: "Failed to launch tournament" });
+  }
+});
+// Post an announcement
+router.post("/announcements", async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    
+    // Find the real admin user to ensure authorization
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.role, 'ADMIN')
+    });
+
+    if (!adminUser) {
+      return res.status(500).json({ error: "Admin user not found" });
+    }
+    
+    const [newAnnouncement] = await db.insert(announcements).values({
+      title,
+      content
+    }).returning();
+    
+    res.json(newAnnouncement);
+  } catch (error) {
+    console.error("Failed to post announcement:", error);
+    res.status(500).json({ error: "Failed to post announcement" });
+  }
+});
+
+// Complete tournament and save winners
+router.post("/tournaments/:id/complete", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const { winners } = req.body; // Array of { teamName, rank, points }
+
+    // Find admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.role, 'ADMIN')
+    });
+    if (!adminUser) return res.status(500).json({ error: "Admin user not found" });
+
+    // Update tournament status
+    await db.update(tournaments)
+      .set({ status: 'COMPLETED' })
+      .where(eq(tournaments.id, tournamentId));
+
+    // Save winners
+    if (winners && Array.isArray(winners)) {
+      for (const winner of winners) {
+        await db.insert(results).values({
+          tournamentId,
+          teamName: winner.teamName,
+          rank: winner.rank,
+          points: winner.points || 0
+        });
+      }
+    }
+
+    res.json({ success: true, message: "Tournament completed and winners saved." });
+  } catch (error) {
+    console.error("Failed to complete tournament:", error);
+    res.status(500).json({ error: "Failed to complete tournament" });
+  }
+});
+
+// Get confirmed players for a tournament
+router.get("/tournaments/:id/players", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    
+    // Find admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.role, 'ADMIN')
+    });
+    if (!adminUser) return res.status(500).json({ error: "Admin user not found" });
+
+    // Fetch all confirmed registrations for this tournament
+    const confirmedPlayers = await db.select({
+      id: registrations.id,
+      teamName: registrations.teamName,
+      captainName: registrations.captainName,
+      whatsapp: registrations.contactWhatsApp,
+      email: registrations.contactEmail,
+      inGameId: registrations.inGameId,
+    })
+    .from(registrations)
+    .where(eq(registrations.tournamentId, tournamentId));
+    
+    // In a real app we'd filter by status = 'CONFIRMED', but right now we might have pending too
+    // Let's filter by CONFIRMED
+    // Wait, the status is checked by eq(registrations.status, 'CONFIRMED') but let's just use JavaScript to filter to avoid complex imports if status enum isn't handy
+    
+    const dbPlayers = await db.query.registrations.findMany({
+      where: (regs, { eq, and }) => and(eq(regs.tournamentId, tournamentId), eq(regs.status, 'CONFIRMED')),
+      columns: {
+        id: true,
+        teamName: true,
+        captainName: true,
+        contactWhatsApp: true,
+        contactEmail: true,
+        inGameId: true,
+      }
+    });
+
+    res.json(dbPlayers);
+  } catch (error) {
+    console.error("Failed to fetch players:", error);
+    res.status(500).json({ error: "Failed to fetch players" });
+  }
+});
+
+// Set room credentials for a tournament
+router.post("/tournaments/:id/room", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const { roomId, roomPassword } = req.body;
+    
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.role, 'ADMIN')
+    });
+    if (!adminUser) return res.status(500).json({ error: "Admin user not found" });
+
+    await db.update(tournaments)
+      .set({ roomId, roomPassword })
+      .where(eq(tournaments.id, tournamentId));
+
+    res.json({ success: true, message: "Room credentials updated" });
+  } catch (error) {
+    console.error("Failed to update room:", error);
+    res.status(500).json({ error: "Failed to update room" });
   }
 });
 

@@ -1,10 +1,11 @@
 import { useState, type FormEvent, useRef } from 'react';
 import { Link, useParams } from 'wouter';
-import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy } from 'lucide-react';
 import { getGetTournamentQueryKey, useGetTournament, useRegisterForTournament, type RegistrationInput } from '@workspace/api-client-react';
 import { Button, ErrorState, GameMark, Skeleton, StatusPill } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadImage } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 export default function TournamentDetail() {
   const { id = '' } = useParams<{ id: string }>();
@@ -32,6 +33,15 @@ export default function TournamentDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const tournament = query.data;
+  
+  const { data: results = [] } = useQuery({
+    queryKey: ['tournamentResults', id],
+    queryFn: async () => {
+      const res = await fetch(`/api/tournaments/${id}/results`);
+      return res.json();
+    },
+    enabled: tournament?.status === 'COMPLETED'
+  });
   
   const updateField = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   
@@ -153,6 +163,49 @@ export default function TournamentDetail() {
             <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10"><MapPin size={16} className="text-secondary" /> {tournament.region}</span>
             <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10"><Users size={16} className="text-primary" /> {tournament.teamSize} player team</span>
           </div>
+
+          {tournament.status === 'COMPLETED' && results.length > 0 && (
+            <section className="bg-black/40 border border-primary/30 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
+              <h2 className="flex items-center justify-center gap-3 font-display text-3xl font-bold text-white mb-10 relative">
+                <Trophy size={32} className="text-primary" /> Tournament Winners
+              </h2>
+              
+              <div className="flex flex-col md:flex-row items-end justify-center gap-4 md:gap-8 min-h-[200px]">
+                {/* 2nd Place */}
+                {results.find((r: any) => r.rank === 2) && (
+                  <div className="flex flex-col items-center order-2 md:order-1 w-full md:w-1/3">
+                    <p className="font-bold text-white mb-2 text-center text-lg break-all">{results.find((r: any) => r.rank === 2).teamName}</p>
+                    <div className="w-full bg-white/10 border-t-2 border-slate-300 h-24 rounded-t-xl flex items-start justify-center pt-4">
+                      <span className="font-display font-bold text-slate-300 text-2xl">2ND</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 1st Place */}
+                {results.find((r: any) => r.rank === 1) && (
+                  <div className="flex flex-col items-center order-1 md:order-2 w-full md:w-1/3">
+                    <Trophy size={40} className="text-yellow-400 mb-2 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]" />
+                    <p className="font-bold text-white mb-2 text-center text-xl break-all">{results.find((r: any) => r.rank === 1).teamName}</p>
+                    <div className="w-full bg-white/10 border-t-4 border-yellow-400 h-32 rounded-t-xl flex items-start justify-center pt-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-yellow-400/10" />
+                      <span className="font-display font-bold text-yellow-400 text-3xl relative">1ST</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 3rd Place */}
+                {results.find((r: any) => r.rank === 3) && (
+                  <div className="flex flex-col items-center order-3 md:order-3 w-full md:w-1/3">
+                    <p className="font-bold text-white mb-2 text-center text-lg break-all">{results.find((r: any) => r.rank === 3).teamName}</p>
+                    <div className="w-full bg-white/10 border-t-2 border-amber-600 h-16 rounded-t-xl flex items-start justify-center pt-4">
+                      <span className="font-display font-bold text-amber-600 text-xl">3RD</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
           
           <section>
             <h2 className="font-display text-3xl font-bold text-white mb-6">The brief</h2>
@@ -212,36 +265,46 @@ export default function TournamentDetail() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
             <p className="font-mono-ui text-xs font-bold uppercase tracking-[.2em] text-primary">Secure your slot</p>
             
-            <div className="mt-6 flex items-end justify-between">
-              <p className="font-display text-5xl font-bold text-white">{tournament.entryType === 'FREE' ? '₹0' : `${tournament.currency}${tournament.entryFee}`}</p>
-              <p className="text-sm text-muted-foreground mb-1">per squad</p>
-            </div>
-            
-            <div className="mt-8 h-3 overflow-hidden rounded-full bg-white/10 border border-white/5">
-              <motion.div 
-                initial={{ width: 0 }} animate={{ width: `${Math.min((tournament.participants / tournament.maxParticipants) * 100, 100)}%` }} transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary relative"
-              >
-                <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse" />
-              </motion.div>
-            </div>
-            
-            <div className="mt-3 flex justify-between text-xs font-bold text-muted-foreground">
-              <span className="text-white">{tournament.participants} registered</span>
-              <span>{tournament.maxParticipants - tournament.participants} left</span>
-            </div>
-            
-            <Button 
-              className="mt-8 w-full h-14 bg-primary hover:bg-primary/90 text-white text-base shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-[1.02]" 
-              onClick={() => { setStep(1); setModal(true); }} 
-              disabled={tournament.registrationStatus !== 'AVAILABLE'}
-            >
-              Register your Squad <ArrowRight size={18} className="ml-2" />
-            </Button>
-            
-            <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-              <LockKeyhole size={14} className="text-secondary" /> Registration closes {tournament.registrationDeadline}
-            </p>
+            {tournament.status === 'COMPLETED' ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Trophy size={48} className="text-primary mb-4" />
+                <p className="font-display text-2xl font-bold text-white mb-2">Tournament Completed</p>
+                <p className="text-sm text-muted-foreground text-center">Registrations are closed and this tournament has ended.</p>
+              </div>
+            ) : (
+              <>
+                <div className="mt-6 flex items-end justify-between">
+                  <p className="font-display text-5xl font-bold text-white">{tournament.entryType === 'FREE' ? '₹0' : `${tournament.currency}${tournament.entryFee}`}</p>
+                  <p className="text-sm text-muted-foreground mb-1">per squad</p>
+                </div>
+                
+                <div className="mt-8 h-3 overflow-hidden rounded-full bg-white/10 border border-white/5">
+                  <motion.div 
+                    initial={{ width: 0 }} animate={{ width: `${Math.min((tournament.participants / tournament.maxParticipants) * 100, 100)}%` }} transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-secondary relative"
+                  >
+                    <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse" />
+                  </motion.div>
+                </div>
+                
+                <div className="mt-3 flex justify-between text-xs font-bold text-muted-foreground">
+                  <span className="text-white">{tournament.participants} registered</span>
+                  <span>{tournament.maxParticipants - tournament.participants} left</span>
+                </div>
+                
+                <Button 
+                  className="mt-8 w-full h-14 bg-primary hover:bg-primary/90 text-white text-base shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-[1.02]" 
+                  onClick={() => { setStep(1); setModal(true); }} 
+                  disabled={tournament.registrationStatus !== 'AVAILABLE'}
+                >
+                  Register your Squad <ArrowRight size={18} className="ml-2" />
+                </Button>
+                
+                <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+                  <LockKeyhole size={14} className="text-secondary" /> Registration closes {tournament.registrationDeadline}
+                </p>
+              </>
+            )}
           </div>
           
           <div className="mt-6 rounded-3xl border border-secondary/30 bg-secondary/10 p-6 relative overflow-hidden">
@@ -326,12 +389,18 @@ export default function TournamentDetail() {
                   <div className="p-5 bg-secondary/10 border border-secondary/20 rounded-2xl flex flex-col items-center justify-center text-center mb-8">
                      <p className="text-sm text-muted-foreground">Scan QR or pay to UPI ID</p>
                      
-                     <div className="w-48 h-48 bg-white rounded-xl my-6 flex items-center justify-center p-2 relative">
-                        {/* Placeholder QR - replace src with real QR url if available */}
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=nexarena@upi&pn=Nexarena&am=100" alt="UPI QR Code" className="w-full h-full object-contain" />
+                     <div className="w-48 h-48 bg-white rounded-xl my-6 flex items-center justify-center p-2 relative overflow-hidden">
+                        {tournament.paymentQrUrl ? (
+                          <img src={tournament.paymentQrUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
+                        ) : (
+                          <div className="text-xs text-muted-foreground flex flex-col items-center">
+                            <span className="block mb-2 font-bold text-black/50">NO QR UPLOADED</span>
+                            Please use the UPI ID below
+                          </div>
+                        )}
                      </div>
                      
-                     <p className="font-mono-ui text-lg font-bold text-white tracking-widest bg-black/50 px-4 py-2 rounded-lg border border-white/10">nexarena@upi</p>
+                     <p className="font-mono-ui text-lg font-bold text-white tracking-widest bg-black/50 px-4 py-2 rounded-lg border border-white/10">{tournament.upiId || 'Host UPI not provided'}</p>
                      <p className="mt-4 text-xl text-white">Entry Fee: <span className="font-bold text-secondary font-display">₹{tournament.entryFee}</span></p>
                   </div>
 
