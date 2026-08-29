@@ -9,25 +9,55 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
+// Simple IP-based rate limiting for admin login
+const loginAttempts = new Map<string, { count: number, timestamp: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
 // Realistic admin login using database
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     
+    // Rate limiting check
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    let attempt = loginAttempts.get(ip);
+    
+    if (attempt) {
+      if (now - attempt.timestamp > LOCKOUT_MS) {
+        // Reset if lockout period has passed
+        attempt = { count: 0, timestamp: now };
+      } else if (attempt.count >= MAX_ATTEMPTS) {
+        return res.status(429).json({ error: 'Too many failed login attempts. Please try again after 15 minutes.' });
+      }
+    } else {
+      attempt = { count: 0, timestamp: now };
+    }
+
     // Find user in database with ADMIN role
     const user = await db.query.users.findFirst({
       where: eq(users.email, email),
     });
 
     if (!user || user.role !== 'ADMIN') {
+      attempt.count++;
+      attempt.timestamp = now;
+      loginAttempts.set(ip, attempt);
       return res.status(401).json({ error: 'Invalid credentials or unauthorized' });
     }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      attempt.count++;
+      attempt.timestamp = now;
+      loginAttempts.set(ip, attempt);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Reset attempts on successful login
+    loginAttempts.delete(ip);
 
     // Generate token
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
