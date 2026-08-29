@@ -1,16 +1,43 @@
 import { Router } from "express";
-import { db, registrations, payments, tournaments, games } from "@workspace/db";
+import { db, registrations, payments, tournaments, games, users } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
-// Hardcoded admin login for MVP
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
+
+// Realistic admin login using database
 router.post("/admin/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (email === 'admin@nexarena.com' && password === 'admin123') {
-    res.json({ token: 'fake-jwt-token-for-admin-mvp' });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const { email, password } = req.body;
+    
+    // Find user in database with ADMIN role
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(401).json({ error: 'Invalid credentials or unauthorized' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Generate token
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.json({ token });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
