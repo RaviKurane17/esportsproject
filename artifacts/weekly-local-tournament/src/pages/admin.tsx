@@ -337,7 +337,8 @@ export default function Admin() {
                   </button>
                 </div>
               </div>
-            ))}
+            ));
+          })()}
           </div>
         </motion.div>
       )}
