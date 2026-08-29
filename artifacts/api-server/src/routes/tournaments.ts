@@ -70,11 +70,12 @@ router.get("/tournaments", async (req, res) => {
         date: row.tournament.matchDate.toISOString().split("T")[0],
         time: row.tournament.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
         entryFee: row.tournament.entryFee,
-        prizePool: `₹${row.tournament.prizePool / 100}`, // paise to INR
+        prizePool: row.tournament.prizePool / 100, // Zod expects number
+        participants: 0, // Zod expects 'participants', not 'currentParticipants'
         maxParticipants: row.tournament.maxSlots,
-        currentParticipants: 0, // Should count registrations in real life
         banner: row.tournament.bannerUrl || "/banners/banner1.png",
         status: row.tournament.status === 'REGISTRATION_OPEN' ? 'OPEN' : row.tournament.status,
+        registrationStatus: 'AVAILABLE', // Required by Zod
         entryType: row.tournament.entryFee > 0 ? "PAID" : "FREE",
         currency: "INR",
         teamSize: row.tournament.teamSize,
@@ -151,17 +152,29 @@ router.get("/tournaments/:id", async (req, res) => {
       date: t.matchDate.toISOString().split("T")[0],
       time: t.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       entryFee: t.entryFee,
-      prizePool: `₹${t.prizePool / 100}`,
+      prizePool: t.prizePool / 100,
+      participants: 0,
       maxParticipants: t.maxSlots,
-      currentParticipants: 0,
       banner: t.bannerUrl || "/banners/banner1.png",
       status: t.status === 'REGISTRATION_OPEN' ? 'OPEN' : t.status,
+      registrationStatus: 'AVAILABLE',
       entryType: t.entryFee > 0 ? "PAID" : "FREE",
       currency: "INR",
       teamSize: t.teamSize,
       format: t.format || "Squad",
       region: "India",
-      accent
+      accent,
+      registrationDeadline: t.registrationCloses?.toISOString().split("T")[0] || t.matchDate.toISOString().split("T")[0],
+      eligibility: ["Mobile players only", "Must be on Discord"],
+      rules: ["No emulators", "Record POV"],
+      prizes: [
+        { place: "1st", amount: (t.prizePool / 100) * 0.6, label: "Winner" },
+        { place: "2nd", amount: (t.prizePool / 100) * 0.3, label: "Runner Up" },
+        { place: "3rd", amount: (t.prizePool / 100) * 0.1, label: "Third Place" }
+      ],
+      schedule: [
+        { label: "Check-in", detail: "30 mins before start", state: "NEXT" as const }
+      ]
     };
 
     res.json(GetTournamentResponse.parse(mapped));
