@@ -96,9 +96,9 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="w-full bg-primary/20 text-center py-3 rounded-lg text-primary font-bold animate-pulse-glow">
+              <Link href="/tournaments" className="w-full bg-primary/20 text-center py-3 rounded-lg text-primary font-bold animate-pulse-glow block hover:bg-primary/30 transition-colors">
                 REGISTER NOW
-              </div>
+              </Link>
             </motion.div>
 
             {/* Background floating decor */}
