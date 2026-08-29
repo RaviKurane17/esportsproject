@@ -3,9 +3,13 @@ import pg from "pg";
 import * as schema from "./schema";
 
 const { Pool } = pg;
+const dbUrl = process.env.DATABASE_URL;
 
-const connectionString = process.env.DATABASE_URL || "";
-export const pool = connectionString ? new Pool({ connectionString }) : null;
-export const db = pool ? drizzle(pool, { schema }) : ({} as any);
+if (!dbUrl) {
+  throw new Error("DATABASE_URL must be set in environment");
+}
+
+export const pool = new Pool({ connectionString: dbUrl });
+export const db = drizzle(pool, { schema });
 
 export * from "./schema";

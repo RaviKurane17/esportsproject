@@ -86,10 +86,7 @@ router.post("/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Since we disabled the DB for the demo, return error if it's not the admin
-    if (!db.query || !db.query.users) {
-      return res.status(400).json({ error: "Invalid credentials (DB offline)" });
-    }
+
 
     const user = await db.query.users.findFirst({
       where: eq(users.email, email),
