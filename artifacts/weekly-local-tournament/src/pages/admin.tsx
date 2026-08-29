@@ -60,6 +60,20 @@ export default function Admin() {
     }
   });
 
+  const deleteTournamentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      if (!window.confirm("WARNING: This will completely delete the tournament, ALL its registrations, payments, and results. Are you sure?")) {
+        throw new Error("Cancelled by user");
+      }
+      const res = await fetch(`/api/admin/tournaments/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Failed to delete tournament");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allTournamentsAdmin'] });
+    }
+  });
+
   const [showPastRegistrations, setShowPastRegistrations] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -356,7 +370,7 @@ export default function Admin() {
                        <p className="font-bold text-white text-lg">{t.title}</p>
                        <p className="text-sm text-muted-foreground">{t.game} | {t.date} {t.time}</p>
                      </div>
-                     <div className="flex flex-wrap gap-2">
+                     <div className="flex flex-wrap items-center gap-2">
                        <button onClick={() => setRoomForm({...roomForm, tournamentId: t.id, roomId: t.roomId || '', roomPassword: t.roomPassword || ''})} className="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
                          Manage Room
                        </button>
@@ -365,6 +379,15 @@ export default function Admin() {
                        </button>
                        <button onClick={() => setWinnerForm({...winnerForm, tournamentId: t.id})} className="bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
                          Declare Winners
+                       </button>
+                       <div className="w-px h-6 bg-white/10 mx-1 hidden md:block"></div>
+                       <button 
+                         onClick={() => deleteTournamentMutation.mutate(t.id)} 
+                         disabled={deleteTournamentMutation.isPending}
+                         className="flex items-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                         title="Delete Tournament"
+                       >
+                         <Trash2 size={14} />
                        </button>
                      </div>
                    </div>
@@ -470,13 +493,45 @@ export default function Admin() {
                    )}
                  </div>
                ))}
-               {allTournaments.filter((t: any) => t.status !== 'COMPLETED').length === 0 && (
-                 <p className="text-muted-foreground text-sm">No active tournaments.</p>
-               )}
-             </div>
-           </div>
+                {allTournaments.filter((t: any) => t.status !== 'COMPLETED').length === 0 && (
+                  <p className="text-muted-foreground text-sm">No active tournaments.</p>
+                )}
+              </div>
+            </div>
 
-           <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Create New Tournament</h2>
+            {/* Finished Tournaments List */}
+            <div className="mb-12 border-b border-white/10 pb-12">
+              <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Finished Tournaments</h2>
+              <div className="grid gap-4">
+                {allTournaments.filter((t: any) => t.status === 'COMPLETED').map((t: any) => (
+                  <div key={t.id} className="bg-black/30 p-5 rounded-xl border border-white/5 flex flex-col gap-4 opacity-75 hover:opacity-100 transition-opacity">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-bold text-white text-lg">{t.title}</p>
+                          <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">COMPLETED</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{t.game} | {t.date} {t.time}</p>
+                      </div>
+                      <div>
+                        <button 
+                          onClick={() => deleteTournamentMutation.mutate(t.id)} 
+                          disabled={deleteTournamentMutation.isPending}
+                          className="flex items-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 px-4 py-2 rounded-lg text-xs font-bold transition-colors"
+                        >
+                          <Trash2 size={14} /> Delete Permanently
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {allTournaments.filter((t: any) => t.status === 'COMPLETED').length === 0 && (
+                  <p className="text-muted-foreground text-sm">No finished tournaments.</p>
+                )}
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Create New Tournament</h2>
            <form onSubmit={(e) => { e.preventDefault(); createTournament.mutate(formData); }} className="grid gap-6">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>

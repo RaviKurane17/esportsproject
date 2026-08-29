@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, registrations, payments, tournaments, games, users, announcements, results } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -123,6 +123,38 @@ router.delete("/registrations/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to delete registration" });
+  }
+});
+
+// Delete tournament
+router.delete("/tournaments/:id", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    
+    // 1. Find all registrations for this tournament
+    const regs = await db.query.registrations.findMany({
+      where: eq(registrations.tournamentId, tournamentId)
+    });
+    const regIds = regs.map(r => r.id);
+    
+    // 2. Delete all payments associated with those registrations
+    if (regIds.length > 0) {
+      await db.delete(payments).where(inArray(payments.registrationId, regIds));
+    }
+    
+    // 3. Delete all registrations for this tournament
+    await db.delete(registrations).where(eq(registrations.tournamentId, tournamentId));
+    
+    // 4. Delete all results for this tournament
+    await db.delete(results).where(eq(results.tournamentId, tournamentId));
+    
+    // 5. Finally, delete the tournament itself
+    await db.delete(tournaments).where(eq(tournaments.id, tournamentId));
+
+    res.json({ success: true, message: "Tournament deleted successfully." });
+  } catch (error) {
+    console.error("Failed to delete tournament:", error);
+    res.status(500).json({ error: "Failed to delete tournament" });
   }
 });
 
