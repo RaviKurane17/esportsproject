@@ -44,25 +44,29 @@ router.post("/login", async (req, res) => {
 // Get all registrations with their payment proof
 router.get("/registrations", async (req, res) => {
   try {
-    const allRegistrations = await db.query.registrations.findMany({
-      orderBy: [desc(registrations.createdAt)],
-      with: {
-        tournament: true,
-      }
-    });
+    const allRegistrations = await db.select({
+      registration: registrations,
+      tournament: tournaments,
+    })
+    .from(registrations)
+    .leftJoin(tournaments, eq(registrations.tournamentId, tournaments.id))
+    .orderBy(desc(registrations.createdAt));
 
     // Manually fetch payments since relations might not be fully configured in schema index
     const allPayments = await db.query.payments.findMany();
 
-    const formatted = allRegistrations.map(reg => {
+    const formatted = allRegistrations.map(row => {
+      const reg = row.registration;
+      const tournament = row.tournament;
       const payment = allPayments.find(p => p.registrationId === reg.id);
+      
       return {
         id: reg.id,
         teamName: reg.teamName,
         captainName: reg.captainName,
         whatsapp: reg.contactWhatsApp,
         inGameId: reg.inGameId,
-        tournamentName: reg.tournament?.name || "Unknown Tournament",
+        tournamentName: tournament?.name || "Unknown Tournament",
         status: reg.status,
         createdAt: reg.createdAt,
         payment: payment ? {
@@ -100,6 +104,40 @@ router.post("/registrations/:id/approve", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to approve registration" });
+  }
+});
+
+// Launch a new tournament
+router.post("/tournaments", async (req, res) => {
+  try {
+    const { name, gameId, prizePool, entryFee, matchDate, bannerUrl } = req.body;
+    
+    // Find the real admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.role, 'ADMIN')
+    });
+
+    if (!adminUser) {
+      return res.status(500).json({ error: "Admin user not found" });
+    }
+
+    const [newTournament] = await db.insert(tournaments).values({
+      name,
+      gameId: parseInt(gameId),
+      organizerId: adminUser.id, // Use real admin ID
+      prizePool: parseInt(prizePool) * 100, // paise
+      entryFee: parseInt(entryFee),
+      maxSlots: 100,
+      teamSize: 4,
+      matchDate: new Date(matchDate),
+      bannerUrl,
+      status: "REGISTRATION_OPEN",
+    }).returning();
+
+    res.json(newTournament);
+  } catch (error) {
+    console.error("Failed to launch tournament:", error);
+    res.status(500).json({ error: "Failed to launch tournament" });
   }
 });
 
