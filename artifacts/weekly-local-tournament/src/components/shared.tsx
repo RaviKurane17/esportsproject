@@ -155,10 +155,6 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3"><button className="md:hidden" onClick={() => setOpen(true)} data-testid="button-open-menu"><Menu size={22} /></button><p className="hidden font-mono-ui text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground sm:block">{location === '/' ? 'Weekly local tournament' : location.replace('/', '').replaceAll('-', ' ')}</p></div>
           <div className="flex items-center gap-4">
             <button onClick={() => window.alert('You are all caught up.')} className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" data-testid="button-notifications"><Bell size={18} /></button>
-            <div className="flex items-center gap-2">
-              <Link href="/login" className="text-sm font-semibold text-muted-foreground hover:text-foreground">Log in</Link>
-              <Link href="/register" className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-[#e84b2d]">Sign up</Link>
-            </div>
           </div>
         </header>
         <main>{children}</main>

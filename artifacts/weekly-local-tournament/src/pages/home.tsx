@@ -56,7 +56,7 @@ export default function Home() {
               <Link href="/tournaments" className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-105 hover:shadow-[0_0_30px_hsla(var(--primary),0.6)]">
                 Explore Tournaments <ArrowRight size={20} />
               </Link>
-              <Link href="/register" className="inline-flex items-center gap-2 rounded-lg border border-border glass px-8 py-4 text-base font-bold transition-all hover:border-primary hover:text-primary hover:bg-primary/5">
+              <Link href="/tournaments" className="inline-flex items-center gap-2 rounded-lg border border-border glass px-8 py-4 text-base font-bold transition-all hover:border-primary hover:text-primary hover:bg-primary/5">
                 Join the Arena
               </Link>
             </div>
@@ -293,8 +293,8 @@ export default function Home() {
             <Link href="/tournaments" className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-105">
               EXPLORE TOURNAMENTS
             </Link>
-            <Link href="/register" className="inline-flex items-center gap-2 rounded-lg border border-border glass px-8 py-4 text-base font-bold transition-all hover:border-primary hover:text-primary hover:bg-primary/5">
-              CREATE AN ACCOUNT
+            <Link href="/tournaments" className="inline-flex items-center gap-2 rounded-lg border border-border glass px-8 py-4 text-base font-bold transition-all hover:border-primary hover:text-primary hover:bg-primary/5">
+              BROWSE OPEN ARENAS
             </Link>
           </div>
         </motion.div>
