@@ -134,14 +134,14 @@ export const registerForTournamentBodyConfirmationsMin = 4;
 
 
 export const RegisterForTournamentBody = zod.object({
-  "fullName": zod.string().min(registerForTournamentBodyFullNameMin),
-  "displayName": zod.string().min(registerForTournamentBodyDisplayNameMin),
-  "gameUid": zod.string().min(registerForTournamentBodyGameUidMin),
-  "gameUsername": zod.string().min(registerForTournamentBodyGameUsernameMin),
-  "email": zod.string(),
-  "phone": zod.string().min(registerForTournamentBodyPhoneMin),
-  "teamName": zod.string().nullish(),
-  "confirmations": zod.array(zod.string()).min(registerForTournamentBodyConfirmationsMin)
+  "teamName": zod.string().min(2),
+  "captainName": zod.string().min(2),
+  "inGameId": zod.string().min(2),
+  "email": zod.string().email(),
+  "whatsapp": zod.string().min(10),
+  "screenshotUrl": zod.string().url(),
+  "utrNumber": zod.string().min(4),
+  "confirmations": zod.array(zod.string()).min(1)
 })
 
 export const RegisterForTournamentResponse = zod.object({

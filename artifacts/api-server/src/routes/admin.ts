@@ -1,46 +1,68 @@
-import { Router, Request, Response } from "express";
-import { authenticate, requireRole, AuthRequest } from "../middlewares/auth";
-import { tournaments } from "./tournament-data";
-import { TournamentDetail } from "@workspace/api-zod";
+import { Router } from "express";
+import { db, registrations, payments, tournaments, games } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
-// Protect all admin routes
-router.use(authenticate);
-router.use(requireRole(["ADMIN", "ORGANIZER"]));
-
-router.post("/tournaments", async (req: Request, res: Response) => {
+// Get all registrations with their payment proof
+router.get("/admin/registrations", async (req, res) => {
   try {
-    const data = req.body as TournamentDetail;
-    const newTournament: TournamentDetail = {
-      ...data,
-      id: `wl-${Date.now()}`,
-      participants: 0,
-      registrationStatus: "AVAILABLE",
-    };
-    tournaments.push(newTournament);
-    res.status(201).json(newTournament);
+    const allRegistrations = await db.query.registrations.findMany({
+      orderBy: [desc(registrations.createdAt)],
+      with: {
+        tournament: true,
+      }
+    });
+
+    // Manually fetch payments since relations might not be fully configured in schema index
+    const allPayments = await db.query.payments.findMany();
+
+    const formatted = allRegistrations.map(reg => {
+      const payment = allPayments.find(p => p.registrationId === reg.id);
+      return {
+        id: reg.id,
+        teamName: reg.teamName,
+        captainName: reg.captainName,
+        whatsapp: reg.contactWhatsApp,
+        inGameId: reg.inGameId,
+        tournamentName: reg.tournament?.name || "Unknown Tournament",
+        status: reg.status,
+        createdAt: reg.createdAt,
+        payment: payment ? {
+          amount: payment.amount,
+          utrNumber: payment.utrNumber,
+          screenshotUrl: payment.screenshotUrl,
+          status: payment.status
+        } : null
+      };
+    });
+
+    res.json(formatted);
   } catch (error) {
-    res.status(400).json({ error: "Invalid data" });
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch registrations" });
   }
 });
 
-router.post("/payments/:id/verify", async (req: Request, res: Response) => {
+// Approve registration
+router.post("/admin/registrations/:id/approve", async (req, res) => {
   try {
-    const paymentId = req.params.id;
-    res.json({ id: paymentId, status: 'VERIFIED' });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to verify payment" });
-  }
-});
+    const registrationId = parseInt(req.params.id);
+    
+    // Update registration status
+    await db.update(registrations)
+      .set({ status: 'CONFIRMED' })
+      .where(eq(registrations.id, registrationId));
 
-router.post("/payments/:id/reject", async (req: Request, res: Response) => {
-  try {
-    const paymentId = req.params.id;
-    const { reason } = req.body;
-    res.json({ id: paymentId, status: 'REJECTED', rejectionReason: reason });
+    // Update payment status
+    await db.update(payments)
+      .set({ status: 'VERIFIED' })
+      .where(eq(payments.registrationId, registrationId));
+
+    res.json({ success: true, message: "Registration approved. Squad is now confirmed!" });
   } catch (error) {
-    res.status(500).json({ error: "Failed to reject payment" });
+    console.error(error);
+    res.status(500).json({ error: "Failed to approve registration" });
   }
 });
 

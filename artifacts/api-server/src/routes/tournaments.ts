@@ -50,29 +50,71 @@ router.get("/tournaments/:id", (req, res) => {
   res.json(GetTournamentResponse.parse(tournament));
 });
 
-router.post("/tournaments/:id/register", (req, res) => {
-  const params = RegisterForTournamentParams.parse(req.params);
-  const body = RegisterForTournamentBody.parse(req.body);
-  const tournament = tournaments.find((item) => item.id === params.id);
-  if (!tournament || tournament.registrationStatus !== "AVAILABLE" || tournament.participants >= tournament.maxParticipants) {
-    res.status(400).json({ error: "This tournament is not accepting registrations." });
-    return;
+import { games as gamesTable, tournaments as tournamentsTable, registrations as registrationsTable, payments as paymentsTable, db } from "@workspace/db";
+
+router.post("/tournaments/:id/register", async (req, res) => {
+  try {
+    const params = RegisterForTournamentParams.parse(req.params);
+    const body = RegisterForTournamentBody.parse(req.body);
+    
+    // Find tournament in dummy data to get details
+    const dummyTournament = tournaments.find((item) => item.id === params.id);
+    if (!dummyTournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    // Upsert into real DB to ensure we have a valid integer ID
+    let dbTournament = await db.query.tournaments.findFirst({
+      where: (t, { eq }) => eq(t.name, dummyTournament.title)
+    });
+
+    if (!dbTournament) {
+       // Insert game if not exists
+       let dbGame = await db.query.games.findFirst({ where: (g, { eq }) => eq(g.slug, dummyTournament.gameSlug) });
+       if (!dbGame) {
+         const newGames = await db.insert(gamesTable).values({ name: dummyTournament.game, slug: dummyTournament.gameSlug }).returning();
+         dbGame = newGames[0];
+       }
+       
+       const newTourneys = await db.insert(tournamentsTable).values({
+          name: dummyTournament.title,
+          gameId: dbGame.id,
+          organizerId: 9999,
+          prizePool: 0,
+          entryFee: dummyTournament.entryFee,
+          maxSlots: dummyTournament.maxParticipants,
+          teamSize: 4,
+          matchDate: new Date(),
+       }).returning();
+       dbTournament = newTourneys[0];
+    }
+
+    // Now create registration
+    const [registration] = await db.insert(registrationsTable).values({
+      tournamentId: dbTournament.id,
+      teamName: body.teamName,
+      captainName: body.captainName,
+      contactWhatsApp: body.whatsapp,
+      contactEmail: body.email,
+      inGameId: body.inGameId,
+      status: "PENDING_PAYMENT"
+    }).returning();
+
+    // Create Payment record with screenshot and UTR
+    await db.insert(paymentsTable).values({
+      registrationId: registration.id,
+      amount: dummyTournament.entryFee,
+      screenshotUrl: body.screenshotUrl,
+      utrNumber: body.utrNumber,
+      status: "PENDING"
+    });
+
+    res.status(201).json({ id: registration.id.toString(), tournamentId: params.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to register" });
   }
-  const registrationId = `WLT-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-  const registration: Registration = {
-    id: `registration-${Date.now()}`,
-    tournamentId: tournament.id,
-    registrationId,
-    status: tournament.entryType === "PAID" ? "PENDING_PAYMENT" : "CONFIRMED",
-    tournamentTitle: tournament.title,
-    matchDate: tournament.date,
-    matchTime: tournament.time,
-    totalAmount: tournament.entryFee,
-  };
-  registrations.push(registration);
-  tournament.participants += 1;
-  res.status(201).json(RegisterForTournamentResponse.parse(registration));
-  req.log.info({ registrationId, tournamentId: tournament.id, displayName: body.displayName }, "Tournament registration created");
 });
 
 router.get("/dashboard/summary", (_req, res) => {

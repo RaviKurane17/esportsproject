@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { tournaments } from "./tournaments";
 import { teams } from "./teams";
@@ -9,9 +9,17 @@ export const registrationStatusEnum = pgEnum('registration_status', ['PENDING_PA
 
 export const registrations = pgTable("registrations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  teamId: integer("team_id").references(() => teams.id),
+  userId: integer("user_id").references(() => users.id), // Optional for guests
+  teamId: integer("team_id").references(() => teams.id), // Optional for guests
   tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
+  
+  // Guest Squad Details
+  teamName: text("team_name"),
+  captainName: text("captain_name"),
+  contactWhatsApp: text("contact_whatsapp"),
+  contactEmail: text("contact_email"),
+  inGameId: text("in_game_id"),
+
   status: registrationStatusEnum("status").default('PENDING_PAYMENT').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

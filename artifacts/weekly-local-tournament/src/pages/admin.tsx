@@ -1,19 +1,32 @@
 import { useState } from 'react';
 import { ShieldAlert, CheckCircle, XCircle, Search, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function Admin() {
   const [tab, setTab] = useState<'payments' | 'tournaments'>('payments');
-  
-  // Mock Data for Admin
-  const payments = [
-    { id: 'pay_001', user: 'johndoe99', amount: 50, upiId: 'john@upi', utr: '301234567890', status: 'PENDING' },
-    { id: 'pay_002', user: 'sniperX', amount: 100, upiId: 'sniper@ybl', utr: '109876543210', status: 'VERIFIED' },
-    { id: 'pay_003', user: 'clutchKing', amount: 50, upiId: 'king@okicici', utr: '223344556677', status: 'REJECTED' },
-  ];
-
   const queryClient = useQueryClient();
+
+  const { data: registrations = [], isLoading } = useQuery({
+    queryKey: ['adminRegistrations'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/registrations');
+      if (!res.ok) throw new Error("Failed to fetch registrations");
+      return res.json();
+    }
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/registrations/${id}/approve`, { method: 'POST' });
+      if (!res.ok) throw new Error("Failed to approve");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminRegistrations'] });
+    }
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     game: 'BGMI',
@@ -72,7 +85,7 @@ export default function Admin() {
           onClick={() => setTab('payments')} 
           className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'payments' ? 'bg-primary text-white shadow-[0_0_15px_hsla(var(--primary),0.3)]' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
         >
-          Verify Payments
+          Verify Squad Registrations
         </button>
         <button 
           onClick={() => setTab('tournaments')} 
@@ -93,40 +106,56 @@ export default function Admin() {
           </div>
           
           <div className="grid gap-4">
-            {payments.map(payment => (
-              <div key={payment.id} className="glass rounded-2xl p-6 flex items-center justify-between">
+            {isLoading && <p className="text-muted-foreground">Loading registrations...</p>}
+            {registrations.length === 0 && !isLoading && <p className="text-muted-foreground">No registrations found.</p>}
+            
+            {registrations.map((reg: any) => (
+              <div key={reg.id} className="glass rounded-2xl p-6 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <p className="font-bold text-lg text-white">{payment.user}</p>
+                    <p className="font-bold text-lg text-white">{reg.teamName || reg.captainName}</p>
                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${
-                      payment.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
-                      payment.status === 'VERIFIED' ? 'bg-green-500/20 text-green-500' :
+                      reg.status === 'PENDING_PAYMENT' ? 'bg-yellow-500/20 text-yellow-500' :
+                      reg.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-500' :
                       'bg-red-500/20 text-red-500'
                     }`}>
-                      {payment.status}
+                      {reg.status}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">UPI ID: <span className="text-white">{payment.upiId}</span></p>
-                  <p className="text-sm text-muted-foreground">UTR: <span className="text-primary font-mono-ui tracking-widest">{payment.utr}</span></p>
+                  <p className="text-sm text-muted-foreground mb-1">WhatsApp: <span className="text-white">{reg.whatsapp}</span> | IGN: <span className="text-white">{reg.inGameId}</span></p>
+                  <p className="text-sm text-muted-foreground mb-1">Tournament: <span className="text-white">{reg.tournamentName}</span></p>
+                  
+                  {reg.payment && (
+                    <p className="text-sm text-muted-foreground">UTR: <span className="text-primary font-mono-ui tracking-widest">{reg.payment.utrNumber}</span></p>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="text-right mr-6">
-                    <p className="text-xs text-muted-foreground uppercase">Amount</p>
-                    <p className="font-display font-bold text-2xl text-secondary">₹{payment.amount}</p>
-                  </div>
+                  {reg.payment && (
+                    <div className="text-right mr-6">
+                      <p className="text-xs text-muted-foreground uppercase">Amount Paid</p>
+                      <p className="font-display font-bold text-2xl text-secondary">₹{reg.payment.amount}</p>
+                    </div>
+                  )}
                   
-                  {payment.status === 'PENDING' && (
+                  {reg.status === 'PENDING_PAYMENT' && (
                     <div className="flex gap-2">
-                      <button className="h-10 w-10 rounded-xl bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 flex items-center justify-center transition-colors">
+                      <button 
+                        onClick={() => approveMutation.mutate(reg.id)}
+                        disabled={approveMutation.isPending}
+                        className="h-10 w-10 rounded-xl bg-green-500/20 text-green-500 hover:bg-green-500/40 border border-green-500/30 flex items-center justify-center transition-colors disabled:opacity-50"
+                        title="Approve & Confirm Squad"
+                      >
                         <CheckCircle size={20} />
                       </button>
-                      <button className="h-10 w-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500/40 border border-red-500/30 flex items-center justify-center transition-colors">
+                      <button className="h-10 w-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500/40 border border-red-500/30 flex items-center justify-center transition-colors" title="Reject">
                         <XCircle size={20} />
                       </button>
-                      <button className="h-10 w-10 rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors">
-                        <FileText size={20} />
-                      </button>
+                      {reg.payment?.screenshotUrl && (
+                        <a href={reg.payment.screenshotUrl} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors" title="View Payment Screenshot">
+                          <FileText size={20} />
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
