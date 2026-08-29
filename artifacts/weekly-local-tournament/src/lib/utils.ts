@@ -6,22 +6,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Uploads a File to ImgBB and returns the direct URL
+// Converts a File to a Base64 string for direct upload to our backend
 export async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('image', file);
-  // Using a free ImgBB API key for the MVP
-  const apiKey = '0e8e45300f274a2ce1286f376f9d519b';
-  
-  const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-    method: 'POST',
-    body: formData,
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to convert image to base64'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
   });
-  
-  if (!response.ok) {
-    throw new Error('Failed to upload image');
-  }
-  
-  const data = await response.json();
-  return data.data.url;
 }
