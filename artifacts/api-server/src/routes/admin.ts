@@ -110,7 +110,7 @@ router.post("/registrations/:id/approve", async (req, res) => {
 // Launch a new tournament
 router.post("/tournaments", async (req, res) => {
   try {
-    const { name, gameId, prizePool, entryFee, matchDate, bannerUrl } = req.body;
+    const { title, game, prizePool, entryFee, date, time, banner } = req.body;
     
     // Find the real admin user
     const adminUser = await db.query.users.findFirst({
@@ -121,16 +121,29 @@ router.post("/tournaments", async (req, res) => {
       return res.status(500).json({ error: "Admin user not found" });
     }
 
+    // Find the game by name (e.g. 'BGMI')
+    const gameRecord = await db.query.games.findFirst({
+      where: eq(games.name, game)
+    });
+
+    if (!gameRecord) {
+      return res.status(400).json({ error: "Game not found in database" });
+    }
+
+    // Parse date and time
+    // date is "YYYY-MM-DD", time is "HH:MM"
+    const matchDateObj = new Date(`${date}T${time}:00`);
+
     const [newTournament] = await db.insert(tournaments).values({
-      name,
-      gameId: parseInt(gameId),
-      organizerId: adminUser.id, // Use real admin ID
+      name: title,
+      gameId: gameRecord.id,
+      organizerId: adminUser.id, 
       prizePool: parseInt(prizePool) * 100, // paise
       entryFee: parseInt(entryFee),
       maxSlots: 100,
       teamSize: 4,
-      matchDate: new Date(matchDate),
-      bannerUrl,
+      matchDate: matchDateObj,
+      bannerUrl: banner,
       status: "REGISTRATION_OPEN",
     }).returning();
 
