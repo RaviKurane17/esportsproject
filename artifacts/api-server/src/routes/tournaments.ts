@@ -144,38 +144,18 @@ router.post("/tournaments/:id/register", async (req, res) => {
   try {
     const params = RegisterForTournamentParams.parse(req.params);
     const body = RegisterForTournamentBody.parse(req.body);
-    
-    // Find tournament in dummy data to get details
-    const dummyTournament = tournaments.find((item) => item.id === params.id);
-    if (!dummyTournament) {
-      res.status(404).json({ error: "Tournament not found" });
-      return;
+    const tournamentId = parseInt(params.id);
+
+    if (isNaN(tournamentId)) {
+      return res.status(404).json({ error: "Invalid tournament ID" });
     }
 
-    // Upsert into real DB to ensure we have a valid integer ID
-    let dbTournament = await db.query.tournaments.findFirst({
-      where: (t, { eq }) => eq(t.name, dummyTournament.title)
+    const dbTournament = await db.query.tournaments.findFirst({
+      where: eq(tournamentsTable.id, tournamentId)
     });
 
     if (!dbTournament) {
-       // Insert game if not exists
-       let dbGame = await db.query.games.findFirst({ where: (g, { eq }) => eq(g.slug, dummyTournament.gameSlug) });
-       if (!dbGame) {
-         const newGames = await db.insert(gamesTable).values({ name: dummyTournament.game, slug: dummyTournament.gameSlug }).returning();
-         dbGame = newGames[0];
-       }
-       
-       const newTourneys = await db.insert(tournamentsTable).values({
-          name: dummyTournament.title,
-          gameId: dbGame.id,
-          organizerId: 9999,
-          prizePool: 0,
-          entryFee: dummyTournament.entryFee,
-          maxSlots: dummyTournament.maxParticipants,
-          teamSize: 4,
-          matchDate: new Date(),
-       }).returning();
-       dbTournament = newTourneys[0];
+      return res.status(404).json({ error: "Tournament not found" });
     }
 
     // Now create registration
@@ -192,7 +172,7 @@ router.post("/tournaments/:id/register", async (req, res) => {
     // Create Payment record with screenshot and UTR
     await db.insert(paymentsTable).values({
       registrationId: registration.id,
-      amount: dummyTournament.entryFee,
+      amount: dbTournament.entryFee,
       screenshotUrl: body.screenshotUrl,
       utrNumber: body.utrNumber,
       status: "PENDING"
@@ -205,12 +185,57 @@ router.post("/tournaments/:id/register", async (req, res) => {
   }
 });
 
-router.get("/dashboard/summary", (_req, res) => {
-  res.json(GetDashboardSummaryResponse.parse(dashboardSummary));
+router.get("/dashboard/summary", async (_req, res) => {
+  try {
+    // For MVP, we don't have authenticated users yet, so this is just guest data
+    // Count total live and upcoming from db
+    const liveCount = await db.select().from(tournamentsTable).where(eq(tournamentsTable.status, 'ONGOING'));
+    const upcomingCount = await db.select().from(tournamentsTable).where(eq(tournamentsTable.status, 'REGISTRATION_OPEN'));
+
+    res.json(GetDashboardSummaryResponse.parse({
+      playerName: "Guest Gamer",
+      gamerTag: "GUEST",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest",
+      upcomingCount: upcomingCount.length,
+      liveCount: liveCount.length,
+      completedCount: 0,
+      totalPoints: 0,
+      nextMatch: null,
+    }));
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-router.get("/dashboard/tournaments", (_req, res) => {
-  res.json(GetDashboardTournamentsResponse.parse(registeredTournaments));
+router.get("/dashboard/tournaments", async (_req, res) => {
+  try {
+    // Return the latest registrations
+    const recentRegs = await db.select({
+      registration: registrationsTable,
+      tournament: tournamentsTable,
+      game: gamesTable
+    })
+    .from(registrationsTable)
+    .innerJoin(tournamentsTable, eq(registrationsTable.tournamentId, tournamentsTable.id))
+    .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id))
+    .orderBy(registrationsTable.createdAt);
+
+    const mapped = recentRegs.map(row => ({
+      id: row.registration.id.toString(),
+      tournamentId: row.tournament.id.toString(),
+      title: row.tournament.name,
+      game: row.game.name,
+      date: row.tournament.matchDate.toISOString().split("T")[0],
+      time: row.tournament.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      status: row.registration.status === 'CONFIRMED' ? 'REGISTERED' : 'PENDING_PAYMENT',
+      teamName: row.registration.teamName || "Solo Player",
+      registrationDate: row.registration.createdAt.toISOString()
+    }));
+
+    res.json(GetDashboardTournamentsResponse.parse(mapped));
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/leaderboards", (req, res) => {
