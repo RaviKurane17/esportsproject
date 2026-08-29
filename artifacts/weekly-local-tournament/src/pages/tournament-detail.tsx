@@ -1,6 +1,6 @@
 import { useState, type FormEvent, useRef } from 'react';
 import { Link, useParams } from 'wouter';
-import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy, Ticket, Search, Key } from 'lucide-react';
 import { getGetTournamentQueryKey, useGetTournament, useRegisterForTournament, type RegistrationInput } from '@workspace/api-client-react';
 import { Button, ErrorState, GameMark, Skeleton, StatusPill } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +31,32 @@ export default function TournamentDetail() {
   const [utrNumber, setUtrNumber] = useState('');
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Booking checker state
+  const [bookingIdInput, setBookingIdInput] = useState('');
+  const [bookingResult, setBookingResult] = useState<any>(null);
+  const [bookingError, setBookingError] = useState('');
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const checkBooking = async () => {
+    if (!bookingIdInput.trim()) return;
+    setBookingLoading(true);
+    setBookingError('');
+    setBookingResult(null);
+    try {
+      const res = await fetch(`/api/tournaments/${id}/booking/${bookingIdInput.replace('#', '')}`);
+      if (!res.ok) {
+        const err = await res.json();
+        setBookingError(err.error || 'Booking not found');
+        return;
+      }
+      setBookingResult(await res.json());
+    } catch {
+      setBookingError('Connection error. Try again.');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
   
   const tournament = query.data;
   
@@ -312,6 +338,68 @@ export default function TournamentDetail() {
              <p className="flex items-center gap-3 font-bold text-white"><ShieldCheck size={20} className="text-secondary" /> Run by a verified host</p>
              <p className="mt-3 text-sm leading-relaxed text-white/60">Clear rules, visible room details, and a real match result after the final round.</p>
           </div>
+
+          {/* Booking Checker Widget */}
+          <div className="mt-6 rounded-3xl border border-primary/30 bg-black/60 backdrop-blur-xl p-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <p className="flex items-center gap-2 font-bold text-white mb-1 relative"><Ticket size={18} className="text-primary" /> Check Your Booking</p>
+            <p className="text-xs text-muted-foreground mb-4 relative">Enter your Booking ID to see status & room details.</p>
+            
+            <div className="flex gap-2 relative mb-4">
+              <input 
+                value={bookingIdInput}
+                onChange={e => setBookingIdInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && checkBooking()}
+                placeholder="e.g. 42"
+                className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-primary transition-colors"
+              />
+              <button 
+                onClick={checkBooking}
+                disabled={bookingLoading}
+                className="bg-primary hover:bg-primary/80 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+              >
+                {bookingLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              </button>
+            </div>
+
+            {bookingError && (
+              <div className="relative bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-400 font-bold">
+                {bookingError}
+              </div>
+            )}
+
+            {bookingResult && (
+              <div className="relative space-y-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold text-white">{bookingResult.teamName}</p>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${
+                      bookingResult.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                    }`}>
+                      {bookingResult.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{bookingResult.message}</p>
+                </div>
+                
+                {bookingResult.roomId && (
+                  <div className="bg-gradient-to-br from-green-500/10 to-primary/10 border-2 border-green-500/40 rounded-xl p-4">
+                    <p className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-wider mb-3"><Key size={14} /> Room Credentials</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Room ID</p>
+                        <p className="font-mono-ui font-bold text-lg text-white tracking-wider">{bookingResult.roomId}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Password</p>
+                        <p className="font-mono-ui font-bold text-lg text-white tracking-wider">{bookingResult.roomPassword}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </aside>
       </div>
       
@@ -448,24 +536,46 @@ export default function TournamentDetail() {
               {/* STEP 3: Success */}
               {step === 3 && done && (
                 <div className="py-10 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
+                  <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6 relative">
                     <Check size={40} />
+                    <div className="absolute inset-0 rounded-full bg-green-500/20 animate-ping" />
                   </div>
-                  <h3 className="font-display text-3xl font-bold text-white mb-4">Registration Submitted!</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto mb-8">
-                    Your payment is currently under review by our team. 
-                    <br/><br/>
-                    <strong className="text-white">What's Next?</strong><br/>
-                    You will receive the Room ID and Password via <strong>WhatsApp and Email 30 minutes before the match starts.</strong> Make sure your squad is ready!
+                  <h3 className="font-display text-3xl font-bold text-white mb-2">Registration Successful! 🎉</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                    Your squad has been registered and payment proof submitted.
                   </p>
                   
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-8 w-full max-w-sm">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Registration ID</p>
-                    <p className="font-mono-ui font-bold text-primary">{done.registrationId}</p>
+                  {/* Booking ID Card */}
+                  <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/40 rounded-2xl p-6 mb-6 w-full max-w-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <p className="text-xs text-primary uppercase tracking-[.2em] font-bold mb-2 relative">Your Booking ID</p>
+                    <p className="font-mono-ui font-bold text-4xl text-white relative tracking-wider">#{done.registrationId}</p>
+                    <p className="text-[11px] text-muted-foreground mt-3 relative">⚠️ Save this ID! You'll need it to check your status and get room credentials.</p>
+                  </div>
+
+                  {/* What happens next */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-5 w-full max-w-sm text-left space-y-3 mb-8">
+                    <p className="text-xs uppercase font-bold text-white tracking-wider">What happens next?</p>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">1</div>
+                      <p className="text-sm text-muted-foreground">Admin will <strong className="text-white">verify your payment</strong> (usually within 30 min)</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">2</div>
+                      <p className="text-sm text-muted-foreground">Your status changes to <strong className="text-green-500">CONFIRMED</strong></p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">3</div>
+                      <p className="text-sm text-muted-foreground">Come back to this page, enter your <strong className="text-white">Booking ID</strong> to see Room ID & Password</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-secondary/20 text-secondary flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">4</div>
+                      <p className="text-sm text-muted-foreground">Admin may also send Room details via <strong className="text-white">WhatsApp</strong></p>
+                    </div>
                   </div>
 
                   <Button onClick={() => setModal(false)} className="h-12 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/20">
-                    Close & Return to Dashboard
+                    Close & Return to Tournament
                   </Button>
                 </div>
               )}

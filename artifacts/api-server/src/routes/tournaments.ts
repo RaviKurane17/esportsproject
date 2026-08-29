@@ -307,4 +307,43 @@ router.get("/:id/results", async (req, res) => {
   }
 });
 
+// Check booking status + get room credentials
+router.get("/:id/booking/:bookingId", async (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const bookingId = parseInt(req.params.bookingId);
+    
+    const reg = await db.query.registrations.findFirst({
+      where: (regs, { eq, and }) => and(
+        eq(regs.id, bookingId),
+        eq(regs.tournamentId, tournamentId)
+      )
+    });
+
+    if (!reg) {
+      return res.status(404).json({ error: "Booking not found. Please check your Booking ID." });
+    }
+
+    // Get tournament to check if room credentials are set
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournamentsTable.id, tournamentId)
+    });
+
+    res.json({
+      bookingId: reg.id,
+      teamName: reg.teamName,
+      captainName: reg.captainName,
+      status: reg.status,
+      roomId: reg.status === 'CONFIRMED' ? (tournament?.roomId || null) : null,
+      roomPassword: reg.status === 'CONFIRMED' ? (tournament?.roomPassword || null) : null,
+      message: reg.status === 'CONFIRMED' 
+        ? (tournament?.roomId ? 'Your slot is confirmed! Room details are below.' : 'Your slot is confirmed! Room details will appear here before match time.')
+        : 'Your payment is under review. Please wait for admin verification.'
+    });
+  } catch (error) {
+    console.error("Booking check error:", error);
+    res.status(500).json({ error: "Failed to check booking" });
+  }
+});
+
 export default router;

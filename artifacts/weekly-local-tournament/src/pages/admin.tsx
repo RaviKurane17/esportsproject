@@ -362,11 +362,27 @@ export default function Admin() {
                                  );
                                })()}
 
-                               {/* WhatsApp Copy-Paste List */}
+                               {/* WhatsApp Direct Links - one click per player */}
                                <div className="bg-black/60 p-3 rounded-lg border border-white/5">
-                                 <p className="text-xs text-muted-foreground mb-2">WhatsApp Numbers (Copy & Paste)</p>
-                                 <div className="max-h-24 overflow-y-auto text-sm text-white font-mono-ui">
-                                   {notifyPlayersQuery.data.map((p: any) => p.contactWhatsApp).filter(Boolean).join(', ')}
+                                 <p className="text-xs text-muted-foreground mb-2">WhatsApp Direct Send (one click per player)</p>
+                                 <div className="max-h-40 overflow-y-auto space-y-2">
+                                   {notifyPlayersQuery.data.filter((p: any) => p.contactWhatsApp).map((p: any, idx: number) => {
+                                     const phone = p.contactWhatsApp.replace(/[^0-9]/g, '');
+                                     const phoneWithCountry = phone.startsWith('91') ? phone : `91${phone}`;
+                                     const msg = encodeURIComponent(`🚨 MATCH STARTING SOON 🚨\n\nHi ${p.captainName || p.teamName}!\nTournament: ${t.title}\n\n🔑 Room ID: ${t.roomId || 'TBA'}\n🔑 Password: ${t.roomPassword || 'TBA'}\n\nPlease join the room. All the best! 🎯`);
+                                     return (
+                                       <a 
+                                         key={idx}
+                                         href={`https://wa.me/${phoneWithCountry}?text=${msg}`}
+                                         target="_blank"
+                                         rel="noreferrer"
+                                         className="flex items-center justify-between bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 rounded-lg px-3 py-2 transition-colors"
+                                       >
+                                         <span className="text-xs text-white font-bold">{p.teamName || p.captainName}</span>
+                                         <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold">Send via WhatsApp →</span>
+                                       </a>
+                                     );
+                                   })}
                                  </div>
                                </div>
                                
