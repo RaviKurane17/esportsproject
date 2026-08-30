@@ -292,7 +292,7 @@ router.post("/announcements", async (req, res) => {
 router.post("/tournaments/:id/complete", async (req, res) => {
   try {
     const tournamentId = parseInt(req.params.id);
-    const { winners } = req.body; // Array of { teamName, rank, points }
+    const { winners, resultImageUrl } = req.body; // Array of { teamName, rank, points }
 
     // Find admin user
     const adminUser = await db.query.users.findFirst({
@@ -300,9 +300,12 @@ router.post("/tournaments/:id/complete", async (req, res) => {
     });
     if (!adminUser) return res.status(500).json({ error: "Admin user not found" });
 
-    // Update tournament status
+    // Update tournament status and result image
     await db.update(tournaments)
-      .set({ status: 'COMPLETED' })
+      .set({ 
+        status: 'COMPLETED',
+        resultImageUrl: resultImageUrl || null
+      })
       .where(eq(tournaments.id, tournamentId));
 
     // Save winners

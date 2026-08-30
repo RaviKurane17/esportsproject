@@ -144,9 +144,14 @@ export default function Admin() {
     }
   });
 
-  const [winnerForm, setWinnerForm] = useState<{tournamentId: string | null, winners: {teamName: string, rank: number}[]}>({
+  const [winnerForm, setWinnerForm] = useState<{
+    tournamentId: string | null, 
+    winners: {teamName: string, rank: number}[],
+    resultImageFile: File | null
+  }>({
     tournamentId: null,
-    winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}]
+    winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}],
+    resultImageFile: null
   });
 
   const [roomForm, setRoomForm] = useState<{tournamentId: string | null, roomId: string, roomPassword: string}>({
@@ -188,14 +193,21 @@ export default function Admin() {
       const res = await fetch(`/api/admin/tournaments/${data.tournamentId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fake-token-for-now' },
-        body: JSON.stringify({ winners: data.winners })
+        body: JSON.stringify({ 
+          winners: data.winners,
+          resultImageUrl: data.resultImageFile ? await uploadImage(data.resultImageFile) : null
+        })
       });
       if (!res.ok) throw new Error("Failed to complete tournament");
       return res.json();
     },
     onSuccess: () => {
       alert("Tournament completed!");
-      setWinnerForm({ tournamentId: null, winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}] });
+      setWinnerForm({ 
+        tournamentId: null, 
+        winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}],
+        resultImageFile: null
+      });
       queryClient.invalidateQueries({ queryKey: ['allTournamentsAdmin'] });
     }
   });
@@ -250,9 +262,9 @@ export default function Admin() {
 
       {tab === 'payments' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
             <h2 className="text-xl font-bold text-white">Pending Verification</h2>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-white transition-colors">
                 <input 
                   type="checkbox" 
@@ -370,27 +382,27 @@ export default function Admin() {
                        <p className="font-bold text-white text-lg">{t.title}</p>
                        <p className="text-sm text-muted-foreground">{t.game} | {t.date} {t.time}</p>
                      </div>
-                     <div className="flex flex-wrap items-center gap-2">
-                       <button onClick={() => setRoomForm({...roomForm, tournamentId: t.id, roomId: t.roomId || '', roomPassword: t.roomPassword || ''})} className="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                         Manage Room
-                       </button>
-                       <button onClick={() => setNotifyTournamentId(notifyTournamentId === t.id ? null : t.id)} className="bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                         Notify Players
-                       </button>
-                       <button onClick={() => setWinnerForm({...winnerForm, tournamentId: t.id})} className="bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
-                         Declare Winners
-                       </button>
-                       <div className="w-px h-6 bg-white/10 mx-1 hidden md:block"></div>
-                       <button 
-                         onClick={() => deleteTournamentMutation.mutate(t.id)} 
-                         disabled={deleteTournamentMutation.isPending}
-                         className="flex items-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
-                         title="Delete Tournament"
-                       >
-                         <Trash2 size={14} />
-                       </button>
-                     </div>
-                   </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-4 md:mt-0">
+                        <button onClick={() => setRoomForm({...roomForm, tournamentId: t.id, roomId: t.roomId || '', roomPassword: t.roomPassword || ''})} className="flex-1 md:flex-none bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-3 py-2 rounded-lg text-xs font-bold transition-colors text-center">
+                          Manage Room
+                        </button>
+                        <button onClick={() => setNotifyTournamentId(notifyTournamentId === t.id ? null : t.id)} className="flex-1 md:flex-none bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/30 px-3 py-2 rounded-lg text-xs font-bold transition-colors text-center">
+                          Notify Players
+                        </button>
+                        <button onClick={() => setWinnerForm({...winnerForm, tournamentId: t.id})} className="flex-1 md:flex-none bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 px-3 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap text-center">
+                          Declare Winners
+                        </button>
+                        <div className="w-px h-6 bg-white/10 mx-1 hidden md:block"></div>
+                        <button 
+                          onClick={() => deleteTournamentMutation.mutate(t.id)} 
+                          disabled={deleteTournamentMutation.isPending}
+                          className="flex items-center justify-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 px-3 py-2 rounded-lg text-xs font-bold transition-colors"
+                          title="Delete Tournament"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                    
                    {/* Room Credentials Form */}
                    {roomForm.tournamentId === t.id && (
@@ -485,10 +497,26 @@ export default function Admin() {
                            />
                          ))}
                        </div>
-                       <div className="flex gap-2">
-                         <button onClick={() => completeTournament.mutate(winnerForm)} className="bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex-1 hover:bg-green-600">Submit Results</button>
-                         <button onClick={() => setWinnerForm({...winnerForm, tournamentId: null})} className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/20">Cancel</button>
-                       </div>
+                        <div className="mb-4">
+                          <label className="block text-xs uppercase text-muted-foreground font-bold mb-2">Upload Scorecard Image (Optional)</label>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={e => setWinnerForm({...winnerForm, resultImageFile: e.target.files?.[0] || null})} 
+                            className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-primary transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary/80" 
+                          />
+                          {winnerForm.resultImageFile && (
+                            <div className="mt-2 flex items-center gap-2 text-xs text-green-500">
+                              <CheckCircle size={12} /> {winnerForm.resultImageFile.name} selected
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => completeTournament.mutate(winnerForm)} className="bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50">
+                            {completeTournament.isPending ? 'Saving...' : 'Complete & Save'}
+                          </button>
+                          <button onClick={() => setWinnerForm({tournamentId: null, winners: [{teamName: '', rank: 1}, {teamName: '', rank: 2}, {teamName: '', rank: 3}], resultImageFile: null})} className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/20">Cancel</button>
+                        </div>
                      </div>
                    )}
                  </div>

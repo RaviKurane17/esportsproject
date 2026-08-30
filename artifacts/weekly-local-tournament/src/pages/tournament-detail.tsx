@@ -230,6 +230,22 @@ export default function TournamentDetail() {
                   </div>
                 )}
               </div>
+              
+              {tournament.resultImageUrl && (
+                <div className="mt-12 text-center border-t border-white/10 pt-8">
+                  <h3 className="font-bold text-white mb-6 uppercase tracking-wider text-sm flex items-center justify-center gap-2">
+                    <Image size={16} className="text-secondary" /> Full Match Scorecard
+                  </h3>
+                  <div className="rounded-xl overflow-hidden border border-white/10 max-w-3xl mx-auto shadow-2xl relative group">
+                    <img src={tournament.resultImageUrl} alt="Tournament Full Scorecard" className="w-full h-auto object-contain bg-black/50" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <a href={tournament.resultImageUrl} target="_blank" rel="noreferrer" className="bg-primary text-white font-bold px-6 py-3 rounded-full pointer-events-auto shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform flex items-center gap-2">
+                        <Eye size={18} /> View Original Image
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
           )}
           

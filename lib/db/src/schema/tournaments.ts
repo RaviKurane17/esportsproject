@@ -24,6 +24,7 @@ export const tournaments = pgTable("tournaments", {
   registrationCloses: timestamp("registration_closes"),
   upiId: text("upi_id"),
   paymentQrUrl: text("payment_qr_url"),
+  resultImageUrl: text("result_image_url"),
   roomId: text("room_id"),
   roomPassword: text("room_password"),
   status: tournamentStatusEnum("status").default('UPCOMING').notNull(),
