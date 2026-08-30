@@ -1,6 +1,6 @@
 import { useState, type FormEvent, useRef } from 'react';
 import { Link, useParams } from 'wouter';
-import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy, Ticket, Search, Key, Image, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy, Ticket, Search, Key, ImageIcon, Eye } from 'lucide-react';
 import { getGetTournamentQueryKey, useGetTournament, useRegisterForTournament, type RegistrationInput } from '@workspace/api-client-react';
 import { Button, ErrorState, GameMark, Skeleton, StatusPill } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -234,7 +234,7 @@ export default function TournamentDetail() {
               {tournament.resultImageUrl && (
                 <div className="mt-12 text-center border-t border-white/10 pt-8">
                   <h3 className="font-bold text-white mb-6 uppercase tracking-wider text-sm flex items-center justify-center gap-2">
-                    <Image size={16} className="text-secondary" /> Full Match Scorecard
+                    <ImageIcon size={16} className="text-secondary" /> Full Match Scorecard
                   </h3>
                   <div className="rounded-xl overflow-hidden border border-white/10 max-w-3xl mx-auto shadow-2xl relative group">
                     <img src={tournament.resultImageUrl} alt="Tournament Full Scorecard" className="w-full h-auto object-contain bg-black/50" />

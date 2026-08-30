@@ -187,6 +187,7 @@ router.get("/tournaments/:id", async (req, res) => {
       registrationDeadline: t.registrationCloses?.toISOString().split("T")[0] || t.matchDate.toISOString().split("T")[0],
       upiId: t.upiId,
       paymentQrUrl: t.paymentQrUrl,
+      resultImageUrl: t.resultImageUrl,
       eligibility: ["Mobile players only", "Must be on Discord"],
       rules: ["No emulators", "Record POV"],
       prizes: [

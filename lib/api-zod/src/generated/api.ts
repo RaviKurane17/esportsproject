@@ -96,7 +96,8 @@ export const GetTournamentResponse = zod.object({
   "banner": zod.string(),
   "accent": zod.string(),
   "upiId": zod.string().optional().nullable(),
-  "paymentQrUrl": zod.string().optional().nullable()
+  "paymentQrUrl": zod.string().optional().nullable(),
+  "resultImageUrl": zod.string().optional().nullable()
 }).and(zod.object({
   "registrationDeadline": zod.string(),
   "eligibility": zod.array(zod.string()),
