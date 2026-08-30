@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone, LogOut, Upload, Eye, Image, Trash2 } from 'lucide-react';
+import { ShieldAlert, CheckCircle, XCircle, Search, FileText, Megaphone, LogOut, Upload, Eye, ImageIcon, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -324,7 +324,7 @@ export default function Admin() {
                 {/* Payment Screenshot Preview */}
                 {reg.payment?.screenshotUrl && (
                   <div className="mb-4 rounded-xl border border-white/10 bg-black/30 p-3">
-                    <p className="text-xs uppercase text-muted-foreground font-bold mb-2 flex items-center gap-2"><Image size={14} /> Payment Screenshot</p>
+                    <p className="text-xs uppercase text-muted-foreground font-bold mb-2 flex items-center gap-2"><ImageIcon size={14} /> Payment Screenshot</p>
                     <img src={reg.payment.screenshotUrl} alt="Payment proof" className="max-h-48 rounded-lg border border-white/10 object-contain" />
                     <a href={reg.payment.screenshotUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
                       <Eye size={12} /> View Full Size

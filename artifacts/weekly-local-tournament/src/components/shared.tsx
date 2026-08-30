@@ -2,6 +2,7 @@ import { useState, type ReactNode, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { getHealthCheckQueryKey, useHealthCheck } from '@workspace/api-client-react';
 import { ArrowRight, Bell, CalendarDays, ChevronDown, Gamepad2, LayoutGrid, Menu, ShieldCheck, Trophy, X, Zap, Instagram, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const gameColors: Record<string, string> = {
   bgmi: '#f06443',

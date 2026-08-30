@@ -108,6 +108,9 @@ export type TournamentDetail = Tournament & {
   rules: string[];
   prizes: Prize[];
   schedule: ScheduleItem[];
+  upiId?: string | null;
+  paymentQrUrl?: string | null;
+  resultImageUrl?: string | null;
 };
 
 export interface RegistrationInput {
