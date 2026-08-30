@@ -22,6 +22,7 @@ import {
   type Registration,
 } from "./tournament-data";
 import { eq, and, notInArray, sql } from "drizzle-orm";
+import { sendConfirmationEmail } from "../lib/email";
 import { db, tournaments as tournamentsTable, games as gamesTable, registrations as registrationsTable, payments as paymentsTable, results as resultsTable } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -260,6 +261,9 @@ router.post("/tournaments/:id/register", async (req, res) => {
       status: "PENDING"
     });
 
+    // Send confirmation email asynchronously (no await)
+    sendConfirmationEmail(body.email, body.teamName || body.captainName, dbTournament.title).catch(console.error);
+
     res.status(201).json({ id: registration.id.toString(), tournamentId: params.id });
   } catch (error) {
     console.error(error);
@@ -342,7 +346,7 @@ router.get("/:id/results", async (req, res) => {
 });
 
 // Check booking status + get room credentials
-router.get("/:id/booking/:bookingId", async (req, res) => {
+router.get("/tournaments/:id/booking/:bookingId", async (req, res) => {
   try {
     const tournamentId = parseInt(req.params.id);
     const bookingId = parseInt(req.params.bookingId);

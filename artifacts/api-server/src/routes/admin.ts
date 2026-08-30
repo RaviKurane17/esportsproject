@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, registrations, payments, tournaments, games, users, announcements, results } from "@workspace/db";
 import { eq, desc, inArray } from "drizzle-orm";
+import { sendConfirmationEmail } from "../lib/email";
 
 const router = Router();
 
@@ -130,6 +131,17 @@ router.post("/registrations/:id/approve", async (req, res) => {
     await db.update(payments)
       .set({ status: 'VERIFIED' })
       .where(eq(payments.registrationId, registrationId));
+
+    // Get registration details to send email
+    const reg = await db.query.registrations.findFirst({
+      where: eq(registrations.id, registrationId),
+      with: { tournament: true }
+    });
+
+    if (reg && reg.email && reg.tournament) {
+      // Send confirmation email
+      sendConfirmationEmail(reg.email, reg.teamName || reg.captainName, reg.tournament.title).catch(console.error);
+    }
 
     res.json({ success: true, message: "Registration approved. Squad is now confirmed!" });
   } catch (error) {

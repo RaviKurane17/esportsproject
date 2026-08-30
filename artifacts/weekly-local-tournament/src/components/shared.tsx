@@ -1,7 +1,7 @@
 import { useState, type ReactNode, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { getHealthCheckQueryKey, useHealthCheck } from '@workspace/api-client-react';
-import { ArrowRight, Bell, CalendarDays, ChevronDown, Gamepad2, LayoutGrid, Menu, ShieldCheck, Trophy, X, Zap } from 'lucide-react';
+import { ArrowRight, Bell, CalendarDays, ChevronDown, Gamepad2, LayoutGrid, Menu, ShieldCheck, Trophy, X, Zap, Instagram, MessageCircle } from 'lucide-react';
 
 export const gameColors: Record<string, string> = {
   bgmi: '#f06443',
@@ -146,9 +146,23 @@ export function Shell({ children }: { children: ReactNode }) {
             </a>;
           })}
         </nav>
-        <div className="mt-auto rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 p-4">
-          <div className="mb-3 flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${health.isError ? 'bg-primary' : 'bg-accent'}`} /><span className="font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-secondary-foreground/60">{health.isError ? 'Checking network' : 'Arena online'}</span></div>
-          <p className="text-xs leading-relaxed text-secondary-foreground/50">Find your next local match. Show up. Lock in.</p>
+        <div className="mt-auto space-y-4">
+          <div className="rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 p-4">
+            <div className="mb-3 flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${health.isError ? 'bg-primary' : 'bg-accent'}`} /><span className="font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-secondary-foreground/60">{health.isError ? 'Checking network' : 'Arena online'}</span></div>
+            <p className="text-xs leading-relaxed text-secondary-foreground/50">Find your next local match. Show up. Lock in.</p>
+          </div>
+          
+          <div className="rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 p-4">
+            <p className="mb-3 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-secondary-foreground/60">Community</p>
+            <div className="flex flex-col gap-2">
+              <a href="https://chat.whatsapp.com/CAbWCbIX1498JzRbjO22xQ?s=sw&p=a&ilr=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg py-2 text-sm text-secondary-foreground/70 transition-colors hover:text-[#25D366]">
+                <MessageCircle size={18} /> WhatsApp Group
+              </a>
+              <a href="https://www.instagram.com/official_nexarena?igsi=MXFkN2d1ajI5dGQwMg==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg py-2 text-sm text-secondary-foreground/70 transition-colors hover:text-[#E1306C]">
+                <Instagram size={18} /> Instagram
+              </a>
+            </div>
+          </div>
         </div>
       </aside>
       {open && <button className="fixed inset-0 z-30 bg-secondary/50 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-label="Close navigation" data-testid="button-overlay-menu" />}

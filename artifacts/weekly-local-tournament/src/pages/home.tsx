@@ -108,7 +108,9 @@ export default function Home() {
             </motion.div>
           )}
 
-          <SectionHeading eyebrow="MARKETPLACE" title="Active Tournaments" copy="Local-feeling lobbies, clear rules, and verified hosts. Lock in your squad." />
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <SectionHeading eyebrow="MARKETPLACE" title="Active Tournaments" copy="Local-feeling lobbies, clear rules, and verified hosts. Lock in your squad." />
+          </motion.div>
           
           <div className="mt-8">
             {openTournamentsQuery.isLoading ? (
@@ -121,8 +123,16 @@ export default function Home() {
               <EmptyState title="No active tournaments" copy="Check back later for new matches." />
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {openTournaments.map((tournament) => (
-                  <TournamentCard key={tournament.id} tournament={tournament} />
+                {openTournaments.map((tournament, index) => (
+                  <motion.div 
+                    key={tournament.id} 
+                    initial={{ opacity: 0, y: 30 }} 
+                    whileInView={{ opacity: 1, y: 0 }} 
+                    viewport={{ once: true }} 
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                  >
+                    <TournamentCard tournament={tournament} />
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -133,7 +143,9 @@ export default function Home() {
       {/* SCORECARDS SECTION */}
       <section id="scorecards" className="px-5 py-24 md:px-10 relative">
         <div className="max-w-[1280px] mx-auto">
-          <SectionHeading eyebrow="HALL OF FAME" title="Recent Scorecards" copy="Check out the results from our latest completed tournaments." />
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <SectionHeading eyebrow="HALL OF FAME" title="Recent Scorecards" copy="Check out the results from our latest completed tournaments." />
+          </motion.div>
           
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {completedTournamentsQuery.isLoading ? (
@@ -143,11 +155,18 @@ export default function Home() {
                 <EmptyState title="No finished matches yet" copy="Once a tournament concludes, the final scorecard will appear here." />
               </div>
             ) : (
-              completedTournaments.map((tournament) => (
-                <Link key={tournament.id} href={`/tournaments/${tournament.id}`}>
-                  <motion.div whileHover={{ scale: 1.02 }} className="glass-card rounded-2xl p-6 border border-white/10 relative overflow-hidden group cursor-pointer block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="flex justify-between items-start mb-4">
+              completedTournaments.map((tournament, index) => (
+                <motion.div 
+                  key={tournament.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <Link href={`/tournaments/${tournament.id}`}>
+                    <motion.div whileHover={{ scale: 1.02 }} className="glass-card rounded-2xl p-6 border border-white/10 relative overflow-hidden group cursor-pointer block">
+                      <div className="absolute inset-0 bg-gradient-to-r from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="font-bold text-xl text-white group-hover:text-secondary transition-colors">{tournament.title}</h3>
                         <p className="text-xs text-muted-foreground uppercase mt-1">{tournament.game} • {tournament.date}</p>
@@ -159,8 +178,9 @@ export default function Home() {
                     <p className="text-sm text-muted-foreground flex items-center gap-2 font-bold group-hover:text-white transition-colors">
                       View Full Scorecard & Winners <ArrowRight size={16} />
                     </p>
-                  </motion.div>
-                </Link>
+                    </motion.div>
+                  </Link>
+                </motion.div>
               ))
             )}
           </div>
