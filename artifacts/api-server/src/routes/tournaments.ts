@@ -22,6 +22,7 @@ import {
   type Registration,
 } from "./tournament-data";
 import { eq } from "drizzle-orm";
+import { db, tournaments as tournamentsTable, games as gamesTable } from "@workspace/db";
 
 const router: IRouter = Router();
 const registrations: Registration[] = [];
