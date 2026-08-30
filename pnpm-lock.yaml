@@ -77,10 +77,25 @@ importers:
       '@replit/connectors-sdk':
         specifier: ^0.4.1
         version: 0.4.1
+      cors:
+        specifier: ^2.8.6
+        version: 2.8.6
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      pino-http:
+        specifier: ^10.5.0
+        version: 10.5.0
       zod:
         specifier: 'catalog:'
         version: 3.25.76
     devDependencies:
+      '@types/cors':
+        specifier: ^2.8.19
+        version: 2.8.19
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
