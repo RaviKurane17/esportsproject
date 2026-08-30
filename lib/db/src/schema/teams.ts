@@ -1,5 +1,5 @@
 import { mysqlTable, text, varchar, int, timestamp } from "drizzle-orm/mysql-core";
-import { users } from "./users";
+import { users } from "./users.js";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 

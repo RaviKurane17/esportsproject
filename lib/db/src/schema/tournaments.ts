@@ -1,6 +1,6 @@
 import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
-import { games } from "./games";
-import { users } from "./users";
+import { games } from "./games.js";
+import { users } from "./users.js";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 

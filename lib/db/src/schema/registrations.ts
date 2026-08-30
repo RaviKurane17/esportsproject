@@ -1,7 +1,7 @@
 import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
-import { users } from "./users";
-import { tournaments } from "./tournaments";
-import { teams } from "./teams";
+import { users } from "./users.js";
+import { tournaments } from "./tournaments.js";
+import { teams } from "./teams.js";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
