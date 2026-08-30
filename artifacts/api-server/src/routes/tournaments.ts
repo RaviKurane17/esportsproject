@@ -29,6 +29,7 @@ const router: IRouter = Router();
 const registrations: Registration[] = [];
 
 router.get("/games", (_req, res) => {
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
   res.json(ListGamesResponse.parse(games));
 });
 
@@ -104,6 +105,7 @@ router.get("/tournaments", async (req, res) => {
       .filter(t => !query.status || t.status === query.status)
       .filter(t => !search || `${t.title} ${t.game} ${t.organizer}`.toLowerCase().includes(search));
 
+    res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
     res.json(ListTournamentsResponse.parse(filtered));
   } catch (err) {
     console.error(err);
@@ -200,6 +202,7 @@ router.get("/tournaments/:id", async (req, res) => {
       ]
     };
 
+    res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
     res.json(GetTournamentResponse.parse(mapped));
   } catch (err) {
     console.error(err);

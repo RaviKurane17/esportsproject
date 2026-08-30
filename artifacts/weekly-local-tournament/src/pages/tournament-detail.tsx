@@ -58,7 +58,7 @@ export default function TournamentDetail() {
     }
   };
   
-  const tournament = query.data;
+  const tournament = query.data as (typeof query.data & { resultImageUrl?: string | null; upiId?: string | null; paymentQrUrl?: string | null }) | undefined;
   
   const { data: results = [] } = useQuery({
     queryKey: ['tournamentResults', id],
