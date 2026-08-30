@@ -11,20 +11,22 @@ export default function Home() {
   const openTournamentsQuery = useListTournaments({ status: 'OPEN' });
   const completedTournamentsQuery = useListTournaments({ status: 'COMPLETED' });
   
-  const games = gamesQuery.data ?? [];
-  const openTournaments = openTournamentsQuery.data ?? [];
-  const completedTournaments = completedTournamentsQuery.data ?? [];
+  const games = Array.isArray(gamesQuery.data) ? gamesQuery.data : [];
+  const openTournaments = Array.isArray(openTournamentsQuery.data) ? openTournamentsQuery.data : [];
+  const completedTournaments = Array.isArray(completedTournamentsQuery.data) ? completedTournamentsQuery.data : [];
   
   // Filter games strictly to BGMI and Free Fire
   const activeGames = useMemo(() => games.filter((game) => game.slug === 'bgmi' || game.slug === 'free-fire'), [games]);
 
-  const { data: announcements = [] } = useQuery({
+  const { data = [] } = useQuery({
     queryKey: ['publicAnnouncements'],
     queryFn: async () => {
       const res = await fetch('/api/announcements');
       return res.json();
     }
   });
+  
+  const announcements = Array.isArray(data) ? data : [];
 
   return (
     <div className="overflow-hidden bg-background scroll-smooth">
