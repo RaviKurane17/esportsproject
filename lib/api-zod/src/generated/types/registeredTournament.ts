@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { RegisteredTournamentRoomDetails } from './registeredTournamentRoomDetails';
+import type { RegisteredTournamentRoomDetails } from './registeredTournamentRoomDetails.js';
 
 export interface RegisteredTournament {
   id: string;

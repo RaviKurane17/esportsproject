@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { DashboardSummaryNextMatch } from './dashboardSummaryNextMatch';
+import type { DashboardSummaryNextMatch } from './dashboardSummaryNextMatch.js';
 
 export interface DashboardSummary {
   playerName: string;

@@ -5,9 +5,9 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { Prize } from './prize';
-import type { ScheduleItem } from './scheduleItem';
-import type { Tournament } from './tournament';
+import type { Prize } from './prize.js';
+import type { ScheduleItem } from './scheduleItem.js';
+import type { Tournament } from './tournament.js';
 
 export type TournamentDetail = Tournament & {
   registrationDeadline: string;

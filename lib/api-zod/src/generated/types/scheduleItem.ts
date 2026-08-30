@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { ScheduleItemState } from './scheduleItemState';
+import type { ScheduleItemState } from './scheduleItemState.js';
 
 export interface ScheduleItem {
   label: string;

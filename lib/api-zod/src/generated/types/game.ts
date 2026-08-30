@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { GameStatus } from './gameStatus';
+import type { GameStatus } from './gameStatus.js';
 
 export interface Game {
   id: string;

@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { LeaderboardEntryTrend } from './leaderboardEntryTrend';
+import type { LeaderboardEntryTrend } from './leaderboardEntryTrend.js';
 
 export interface LeaderboardEntry {
   rank: number;

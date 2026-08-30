@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { ListTournamentsEntryType } from './listTournamentsEntryType';
+import type { ListTournamentsEntryType } from './listTournamentsEntryType.js';
 
 export type ListTournamentsParams = {
 game?: string;

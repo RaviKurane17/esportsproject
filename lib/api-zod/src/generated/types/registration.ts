@@ -5,7 +5,7 @@
  * Weekly Local Tournament API
  * OpenAPI spec version: 0.1.0
  */
-import type { RegistrationStatus } from './registrationStatus';
+import type { RegistrationStatus } from './registrationStatus.js';
 
 export interface Registration {
   id: string;
