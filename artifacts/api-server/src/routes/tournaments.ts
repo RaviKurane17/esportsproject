@@ -372,10 +372,10 @@ router.get("/tournaments/:id/booking/:bookingId", async (req, res) => {
       teamName: reg.teamName,
       captainName: reg.captainName,
       status: reg.status,
-      roomId: reg.status === 'CONFIRMED' ? (tournament?.roomId || null) : null,
-      roomPassword: reg.status === 'CONFIRMED' ? (tournament?.roomPassword || null) : null,
+      roomId: null,
+      roomPassword: null,
       message: reg.status === 'CONFIRMED' 
-        ? (tournament?.roomId ? 'Your slot is confirmed! Room details are below.' : 'Your slot is confirmed! Room details will appear here before match time.')
+        ? 'Your squad is confirmed! Room details will be sent to your registered email 15 minutes before the match. If you face any issues, DM us on Instagram @official_nexarena.'
         : 'Your payment is under review. Please wait for admin verification.'
     });
   } catch (error) {

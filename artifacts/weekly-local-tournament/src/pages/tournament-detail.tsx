@@ -390,22 +390,6 @@ export default function TournamentDetail() {
                   </div>
                   <p className="text-xs text-muted-foreground">{bookingResult.message}</p>
                 </div>
-                
-                {bookingResult.roomId && (
-                  <div className="bg-gradient-to-br from-green-500/10 to-primary/10 border-2 border-green-500/40 rounded-xl p-4">
-                    <p className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-wider mb-3"><Key size={14} /> Room Credentials</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase">Room ID</p>
-                        <p className="font-mono-ui font-bold text-lg text-white tracking-wider">{bookingResult.roomId}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase">Password</p>
-                        <p className="font-mono-ui font-bold text-lg text-white tracking-wider">{bookingResult.roomPassword}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

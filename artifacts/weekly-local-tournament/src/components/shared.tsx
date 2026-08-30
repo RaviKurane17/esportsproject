@@ -151,18 +151,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="mb-3 flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${health.isError ? 'bg-primary' : 'bg-accent'}`} /><span className="font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-secondary-foreground/60">{health.isError ? 'Checking network' : 'Arena online'}</span></div>
             <p className="text-xs leading-relaxed text-secondary-foreground/50">Find your next local match. Show up. Lock in.</p>
           </div>
-          
-          <div className="rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 p-4">
-            <p className="mb-3 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-secondary-foreground/60">Community</p>
-            <div className="flex flex-col gap-2">
-              <a href="https://chat.whatsapp.com/CAbWCbIX1498JzRbjO22xQ?s=sw&p=a&ilr=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg py-2 text-sm text-secondary-foreground/70 transition-colors hover:text-[#25D366]">
-                <MessageCircle size={18} /> WhatsApp Group
-              </a>
-              <a href="https://www.instagram.com/official_nexarena?igsi=MXFkN2d1ajI5dGQwMg==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg py-2 text-sm text-secondary-foreground/70 transition-colors hover:text-[#E1306C]">
-                <Instagram size={18} /> Instagram
-              </a>
-            </div>
-          </div>
+
         </div>
       </aside>
       {open && <button className="fixed inset-0 z-30 bg-secondary/50 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-label="Close navigation" data-testid="button-overlay-menu" />}
@@ -173,7 +162,30 @@ export function Shell({ children }: { children: ReactNode }) {
             <button onClick={() => window.alert('You are all caught up.')} className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" data-testid="button-notifications"><Bell size={18} /></button>
           </div>
         </header>
-        <main>{children}</main>
+        <main className="min-h-[calc(100vh-72px)] flex flex-col">
+          <div className="flex-1">{children}</div>
+          
+          <footer className="border-t border-border bg-card mt-auto">
+            <div className="max-w-[1280px] mx-auto px-5 py-12 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-secondary"><Zap size={19} fill="currentColor" /></span>
+                <div>
+                  <p className="font-display text-lg font-bold tracking-[-.04em] text-foreground">Nex<span className="text-primary">Arena</span></p>
+                  <p className="text-xs text-muted-foreground">Level up your competitive gaming</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6">
+                <a href="https://chat.whatsapp.com/CAbWCbIX1498JzRbjO22xQ?s=sw&p=a&ilr=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-[#25D366] transition-colors">
+                  <MessageCircle size={18} /> WhatsApp
+                </a>
+                <a href="https://www.instagram.com/official_nexarena?igsi=MXFkN2d1ajI5dGQwMg==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-[#E1306C] transition-colors">
+                  <Instagram size={18} /> Instagram
+                </a>
+              </div>
+            </div>
+          </footer>
+        </main>
       </div>
     </div>
   );

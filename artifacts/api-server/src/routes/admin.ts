@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, registrations, payments, tournaments, games, users, announcements, results } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
-import { sendConfirmationEmail } from "../lib/email";
+import { eq, desc, inArray, and } from "drizzle-orm";
+import { sendConfirmationEmail, sendRoomDetailsEmail } from "../lib/email";
 
 const router = Router();
 
@@ -385,7 +385,26 @@ router.post("/tournaments/:id/room", async (req, res) => {
       .set({ roomId, roomPassword })
       .where(eq(tournaments.id, tournamentId));
 
-    res.json({ success: true, message: "Room credentials updated" });
+    // Send emails if room details are actually provided
+    if (roomId && roomPassword) {
+      const tournament = await db.query.tournaments.findFirst({
+        where: eq(tournaments.id, tournamentId)
+      });
+      
+      const confirmedPlayers = await db.query.registrations.findMany({
+        where: and(eq(registrations.tournamentId, tournamentId), eq(registrations.status, 'CONFIRMED')),
+      });
+
+      if (tournament) {
+        for (const player of confirmedPlayers) {
+          if (player.email) {
+            sendRoomDetailsEmail(player.email, player.teamName || player.captainName, tournament.name, roomId, roomPassword).catch(console.error);
+          }
+        }
+      }
+    }
+
+    res.json({ success: true, message: "Room credentials updated and sent to confirmed players!" });
   } catch (error) {
     console.error("Failed to update room:", error);
     res.status(500).json({ error: "Failed to update room" });

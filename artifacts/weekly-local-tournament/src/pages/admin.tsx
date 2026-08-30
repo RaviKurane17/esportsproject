@@ -401,7 +401,7 @@ export default function Admin() {
                          <input placeholder="Password" value={roomForm.roomPassword} onChange={e => setRoomForm({...roomForm, roomPassword: e.target.value})} className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white flex-1" />
                        </div>
                        <div className="flex gap-2">
-                         <button onClick={() => updateRoom.mutate(roomForm)} className="bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-600">Save Room</button>
+                         <button onClick={() => updateRoom.mutate(roomForm)} className="bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-600">Save & Email Players</button>
                          <button onClick={() => setRoomForm({...roomForm, tournamentId: null})} className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/20">Cancel</button>
                        </div>
                      </div>
