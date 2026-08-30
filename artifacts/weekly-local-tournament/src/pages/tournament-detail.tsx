@@ -1,6 +1,6 @@
 import { useState, type FormEvent, useRef } from 'react';
 import { Link, useParams } from 'wouter';
-import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy, Ticket, Search, Key } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock3, FileText, LockKeyhole, MapPin, ShieldCheck, Users, X, Info, ChevronRight, UploadCloud, Loader2, Trophy, Ticket, Search, Key, Image, Eye } from 'lucide-react';
 import { getGetTournamentQueryKey, useGetTournament, useRegisterForTournament, type RegistrationInput } from '@workspace/api-client-react';
 import { Button, ErrorState, GameMark, Skeleton, StatusPill } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
