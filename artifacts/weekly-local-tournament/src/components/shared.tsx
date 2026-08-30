@@ -6,7 +6,6 @@ import { ArrowRight, Bell, CalendarDays, ChevronDown, Gamepad2, LayoutGrid, Menu
 export const gameColors: Record<string, string> = {
   bgmi: '#f06443',
   'free-fire': '#c1e84b',
-  ludo: '#7c72e8',
 };
 
 export function initials(value: string) {
@@ -114,10 +113,10 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const health = useHealthCheck({ query: { staleTime: 60000, queryKey: getHealthCheckQueryKey() } });
   const links = [
-    { href: '/', label: 'Discover', icon: LayoutGrid },
-    { href: '/tournaments', label: 'Tournaments', icon: Gamepad2 },
-    { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-    { href: '/dashboard', label: 'My arena', icon: ShieldCheck },
+    { href: '#home', label: 'Home', icon: LayoutGrid },
+    { href: '#tournaments', label: 'Tournaments', icon: Gamepad2 },
+    { href: '#scorecards', label: 'Scorecards', icon: Trophy },
+    { href: '#rules', label: 'Rule Book', icon: ShieldCheck },
   ];
   const isAuth = location === '/login' || location === '/register' || location === '/admin/login';
   if (isAuth) return <div className="noise min-h-[100dvh] bg-background">{children}</div>;
@@ -137,11 +136,14 @@ export function Shell({ children }: { children: ReactNode }) {
         <p className="mb-3 px-3 font-mono-ui text-[9px] font-bold uppercase tracking-[.2em] text-secondary-foreground/40">Playground</p>
         <nav className="space-y-1">
           {links.map(({ href, label, icon: Icon }) => {
-            const active = href === '/' ? location === '/' : location.startsWith(href);
-            return <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-secondary-foreground/65 hover:bg-secondary-foreground/10 hover:text-secondary-foreground'}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
-              <Icon size={18} strokeWidth={active ? 2.5 : 1.8} /><span>{label}</span>
-              {active && <ArrowRight className="ml-auto" size={15} />}
-            </Link>;
+            return <a key={href} href={href} onClick={(e) => {
+              setOpen(false);
+              if (location !== '/') {
+                setLocation('/' + href);
+              }
+            }} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors text-secondary-foreground/65 hover:bg-secondary-foreground/10 hover:text-secondary-foreground" data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
+              <Icon size={18} strokeWidth={1.8} /><span>{label}</span>
+            </a>;
           })}
         </nav>
         <div className="mt-auto rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 p-4">

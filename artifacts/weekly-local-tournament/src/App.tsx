@@ -5,12 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Shell } from '@/components/shared';
 import Home from '@/pages/home';
-import Tournaments from '@/pages/tournaments';
 import TournamentDetail from '@/pages/tournament-detail';
-import Dashboard from '@/pages/dashboard';
-import Leaderboard from '@/pages/leaderboard';
 import { Login, Register } from '@/pages/auth';
-import NotFound from '@/pages/not-found';
 import Admin from '@/pages/admin';
 import AdminLogin from '@/pages/auth/admin-login';
 import {
@@ -30,15 +26,12 @@ function Router() {
       <Shell>
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/tournaments" component={Tournaments} />
           <Route path="/tournaments/:id" component={TournamentDetail} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin" component={Admin} />
-          <Route component={NotFound} />
+          <Route component={Home} />
         </Switch>
       </Shell>
     </RoutedErrorBoundary>
