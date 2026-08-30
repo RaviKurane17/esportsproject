@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, Crosshair, MapPin, Radio, ShieldCheck, Sparkles, Users, Zap, Trophy, Gamepad2, TrendingUp, Megaphone, CheckCircle } from 'lucide-react';
 import { useListGames, useListTournaments } from '@workspace/api-client-react';
-import { Button, ErrorState, GameMark, SectionHeading, Skeleton, TournamentCard } from '@/components/shared';
+import { Button, ErrorState, EmptyState, GameMark, SectionHeading, Skeleton, TournamentCard } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';

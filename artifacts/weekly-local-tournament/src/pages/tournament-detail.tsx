@@ -142,7 +142,7 @@ export default function TournamentDetail() {
           <div className="flex flex-wrap items-start justify-between gap-6">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <div className="flex items-center gap-4">
-                <GameMark slug={tournament.gameSlug} name={tournament.game} size="lg" />
+                <GameMark slug={tournament.gameSlug} name={tournament.game} size="md" />
                 <p className="font-mono-ui text-xs font-bold uppercase tracking-[.2em] text-primary">{tournament.game} · {tournament.format}</p>
               </div>
               <h1 className="mt-6 max-w-4xl font-display text-5xl font-extrabold leading-[1.1] tracking-[-.04em] md:text-7xl text-glow">{tournament.title}</h1>
@@ -478,8 +478,8 @@ export default function TournamentDetail() {
                      <p className="text-sm text-muted-foreground">Scan QR or pay to UPI ID</p>
                      
                      <div className="w-48 h-48 bg-white rounded-xl my-6 flex items-center justify-center p-2 relative overflow-hidden">
-                        {tournament.paymentQrUrl ? (
-                          <img src={tournament.paymentQrUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
+                        {(tournament as any).paymentQrUrl ? (
+                          <img src={(tournament as any).paymentQrUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
                         ) : (
                           <div className="text-xs text-muted-foreground flex flex-col items-center">
                             <span className="block mb-2 font-bold text-black/50">NO QR UPLOADED</span>
@@ -488,7 +488,7 @@ export default function TournamentDetail() {
                         )}
                      </div>
                      
-                     <p className="font-mono-ui text-lg font-bold text-white tracking-widest bg-black/50 px-4 py-2 rounded-lg border border-white/10">{tournament.upiId || 'Host UPI not provided'}</p>
+                     <p className="font-mono-ui text-lg font-bold text-white tracking-widest bg-black/50 px-4 py-2 rounded-lg border border-white/10">{(tournament as any).upiId || 'Host UPI not provided'}</p>
                      <p className="mt-4 text-xl text-white">Entry Fee: <span className="font-bold text-secondary font-display">₹{tournament.entryFee}</span></p>
                   </div>
 
@@ -523,7 +523,7 @@ export default function TournamentDetail() {
                   </div>
                   
                   <div className="flex gap-4 mt-8">
-                    <Button type="button" variant="outline" onClick={() => setStep(1)} className="h-14 px-6 border-white/20 hover:bg-white/10">
+                    <Button type="button" variant="ghost" onClick={() => setStep(1)} className="h-14 px-6 border-white/20 hover:bg-white/10">
                        Back
                     </Button>
                     <Button type="submit" disabled={isUploading || register.isPending || !screenshotFile || !utrNumber} className="flex-1 h-14 bg-secondary hover:bg-secondary/90 text-black font-bold text-base shadow-[0_0_15px_hsla(var(--color-secondary),0.4)]">
