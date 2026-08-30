@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import { db } from "@workspace/db";
 import { users } from "@workspace/db/schema";

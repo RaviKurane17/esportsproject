@@ -144,6 +144,23 @@ export default function Admin() {
     }
   });
 
+  const deleteAnnouncement = useMutation({
+    mutationFn: async (id: number) => {
+      if (!window.confirm("Are you sure you want to delete this announcement?")) {
+        throw new Error("Cancelled by user");
+      }
+      const res = await fetch(`/api/admin/announcements/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer fake-token-for-now' }
+      });
+      if (!res.ok) throw new Error("Failed to delete announcement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+    }
+  });
+
   const [winnerForm, setWinnerForm] = useState<{
     tournamentId: string | null, 
     winners: {teamName: string, rank: number}[],
@@ -233,7 +250,7 @@ export default function Admin() {
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors"
+          className="flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors w-full sm:w-auto mt-6 sm:mt-0"
         >
           <LogOut size={16} /> Logout
         </button>
@@ -293,8 +310,8 @@ export default function Admin() {
               
               return visibleRegistrations.map((reg: any) => (
                 <div key={reg.id} className="glass rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                  <div className="flex items-center flex-wrap gap-3">
                     <p className="font-bold text-lg text-white">{reg.teamName || reg.captainName}</p>
                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${
                       reg.status === 'PENDING_PAYMENT' ? 'bg-yellow-500/20 text-yellow-500' :
@@ -305,7 +322,7 @@ export default function Admin() {
                     </span>
                   </div>
                   {reg.payment && (
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="text-xs text-muted-foreground uppercase">Amount Paid</p>
                       <p className="font-display font-bold text-2xl text-secondary">₹{reg.payment.amount}</p>
                     </div>
@@ -680,9 +697,18 @@ export default function Admin() {
              <div className="space-y-4">
                {announcementsList.length === 0 && <p className="text-muted-foreground text-sm">No announcements posted yet.</p>}
                {announcementsList.map((ann: any) => (
-                 <div key={ann.id} className="bg-black/30 p-4 rounded-xl border border-white/5">
-                   <p className="font-bold text-white">{ann.title}</p>
-                   <p className="text-sm text-muted-foreground mt-1">{ann.content}</p>
+                 <div key={ann.id} className="bg-black/30 p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                   <div className="flex-1">
+                     <p className="font-bold text-white">{ann.title}</p>
+                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{ann.content}</p>
+                   </div>
+                   <button 
+                     onClick={() => deleteAnnouncement.mutate(ann.id)}
+                     disabled={deleteAnnouncement.isPending}
+                     className="flex items-center justify-center gap-1.5 text-xs font-bold text-red-500/70 hover:text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/10 w-full sm:w-auto"
+                   >
+                     <Trash2 size={14} /> Delete
+                   </button>
                  </div>
                ))}
              </div>

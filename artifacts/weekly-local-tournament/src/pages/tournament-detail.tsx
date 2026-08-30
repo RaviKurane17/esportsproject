@@ -5,6 +5,7 @@ import { getGetTournamentQueryKey, useGetTournament, useRegisterForTournament, t
 import { Button, ErrorState, GameMark, Skeleton, StatusPill } from '@/components/shared';
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadImage } from '@/lib/utils';
+import { LeaderboardTable } from '@/components/shared/LeaderboardTable';
 import { useQuery } from '@tanstack/react-query';
 
 export default function TournamentDetail() {
@@ -191,45 +192,19 @@ export default function TournamentDetail() {
           </div>
 
           {tournament.status === 'COMPLETED' && results.length > 0 && (
-            <section className="bg-black/40 border border-primary/30 rounded-3xl p-8 relative overflow-hidden">
+            <section className="bg-black/40 border border-primary/30 rounded-3xl p-4 md:p-8 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
-              <h2 className="flex items-center justify-center gap-3 font-display text-3xl font-bold text-white mb-10 relative">
-                <Trophy size={32} className="text-primary" /> Tournament Winners
+              <h2 className="flex items-center justify-center gap-3 font-display text-2xl md:text-3xl font-bold text-white mb-6 md:mb-10 relative">
+                <Trophy size={32} className="text-primary" /> Tournament Standings
               </h2>
               
-              <div className="flex flex-col md:flex-row items-end justify-center gap-4 md:gap-8 min-h-[200px]">
-                {/* 2nd Place */}
-                {results.find((r: any) => r.rank === 2) && (
-                  <div className="flex flex-col items-center order-2 md:order-1 w-full md:w-1/3">
-                    <p className="font-bold text-white mb-2 text-center text-lg break-all">{results.find((r: any) => r.rank === 2).teamName}</p>
-                    <div className="w-full bg-white/10 border-t-2 border-slate-300 h-24 rounded-t-xl flex items-start justify-center pt-4">
-                      <span className="font-display font-bold text-slate-300 text-2xl">2ND</span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* 1st Place */}
-                {results.find((r: any) => r.rank === 1) && (
-                  <div className="flex flex-col items-center order-1 md:order-2 w-full md:w-1/3">
-                    <Trophy size={40} className="text-yellow-400 mb-2 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]" />
-                    <p className="font-bold text-white mb-2 text-center text-xl break-all">{results.find((r: any) => r.rank === 1).teamName}</p>
-                    <div className="w-full bg-white/10 border-t-4 border-yellow-400 h-32 rounded-t-xl flex items-start justify-center pt-4 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-yellow-400/10" />
-                      <span className="font-display font-bold text-yellow-400 text-3xl relative">1ST</span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* 3rd Place */}
-                {results.find((r: any) => r.rank === 3) && (
-                  <div className="flex flex-col items-center order-3 md:order-3 w-full md:w-1/3">
-                    <p className="font-bold text-white mb-2 text-center text-lg break-all">{results.find((r: any) => r.rank === 3).teamName}</p>
-                    <div className="w-full bg-white/10 border-t-2 border-amber-600 h-16 rounded-t-xl flex items-start justify-center pt-4">
-                      <span className="font-display font-bold text-amber-600 text-xl">3RD</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <LeaderboardTable results={results.map((r: any) => ({
+                rank: r.rank,
+                teamName: r.teamName,
+                kills: r.kills,
+                score: r.score,
+                prizeMoney: r.prizeMoney
+              }))} />
               
               {tournament.resultImageUrl && (
                 <div className="mt-12 text-center border-t border-white/10 pt-8">
