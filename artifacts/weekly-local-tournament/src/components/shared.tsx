@@ -165,23 +165,24 @@ export function Shell({ children }: { children: ReactNode }) {
         <main className="min-h-[calc(100vh-72px)] flex flex-col">
           <div className="flex-1">{children}</div>
           
-          <footer className="border-t border-border bg-card mt-auto">
-            <div className="max-w-[1280px] mx-auto px-5 py-12 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <footer className="border-t border-border bg-card mt-auto relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none" />
+            <div className="max-w-[1280px] mx-auto px-5 py-12 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-secondary"><Zap size={19} fill="currentColor" /></span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-secondary shadow-[0_0_15px_hsla(var(--primary),0.5)]"><Zap size={20} fill="currentColor" /></span>
                 <div>
                   <p className="font-display text-lg font-bold tracking-[-.04em] text-foreground">Nex<span className="text-primary">Arena</span></p>
-                  <p className="text-xs text-muted-foreground">Level up your competitive gaming</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Level up your competitive gaming</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-6">
-                <a href="https://chat.whatsapp.com/CAbWCbIX1498JzRbjO22xQ?s=sw&p=a&ilr=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-[#25D366] transition-colors">
+                <motion.a whileHover={{ scale: 1.05, y: -2 }} href="https://chat.whatsapp.com/CAbWCbIX1498JzRbjO22xQ?s=sw&p=a&ilr=1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#25D366]/10 border border-[#25D366]/30 hover:bg-[#25D366] hover:border-[#25D366] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] transition-all">
                   <MessageCircle size={18} /> WhatsApp
-                </a>
-                <a href="https://www.instagram.com/official_nexarena?igsi=MXFkN2d1ajI5dGQwMg==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-[#E1306C] transition-colors">
+                </motion.a>
+                <motion.a whileHover={{ scale: 1.05, y: -2 }} href="https://www.instagram.com/official_nexarena?igsi=MXFkN2d1ajI5dGQwMg==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#E1306C]/10 border border-[#E1306C]/30 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:border-transparent hover:shadow-[0_0_20px_rgba(225,48,108,0.4)] transition-all">
                   <Instagram size={18} /> Instagram
-                </a>
+                </motion.a>
               </div>
             </div>
           </footer>

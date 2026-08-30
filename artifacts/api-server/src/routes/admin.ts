@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, registrations, payments, tournaments, games, users, announcements, results } from "@workspace/db";
 import { eq, desc, inArray, and } from "drizzle-orm";
-import { sendConfirmationEmail, sendRoomDetailsEmail } from "../lib/email";
+import { sendConfirmationEmail, sendRoomDetailsEmail, sendApprovalEmail } from "../lib/email";
 
 const router = Router();
 
@@ -139,8 +139,8 @@ router.post("/registrations/:id/approve", async (req, res) => {
     });
 
     if (reg && reg.email && reg.tournament) {
-      // Send confirmation email
-      sendConfirmationEmail(reg.email, reg.teamName || reg.captainName, reg.tournament.title).catch(console.error);
+      // Send approval email
+      sendApprovalEmail(reg.email, reg.teamName || reg.captainName, reg.tournament.title).catch(console.error);
     }
 
     res.json({ success: true, message: "Registration approved. Squad is now confirmed!" });
