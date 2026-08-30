@@ -3,6 +3,10 @@
   "outputDirectory": "artifacts/weekly-local-tournament/dist/public",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
