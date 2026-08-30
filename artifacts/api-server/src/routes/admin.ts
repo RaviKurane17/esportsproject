@@ -134,13 +134,16 @@ router.post("/registrations/:id/approve", async (req, res) => {
 
     // Get registration details to send email
     const reg = await db.query.registrations.findFirst({
-      where: eq(registrations.id, registrationId),
-      with: { tournament: true }
+      where: eq(registrations.id, registrationId)
     });
 
-    if (reg && reg.email && reg.tournament) {
+    const tournament = reg ? await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, reg.tournamentId)
+    }) : null;
+
+    if (reg && reg.contactEmail && tournament) {
       // Send approval email
-      sendApprovalEmail(reg.email, reg.teamName || reg.captainName, reg.tournament.title).catch(console.error);
+      sendApprovalEmail(reg.contactEmail, reg.teamName || reg.captainName || "Team", tournament.name).catch(console.error);
     }
 
     res.json({ success: true, message: "Registration approved. Squad is now confirmed!" });
@@ -229,10 +232,11 @@ router.post("/tournaments", async (req, res) => {
     });
 
     if (!gameRecord) {
-      const [newGame] = await db.insert(games).values({
+      const [newGameResult] = await db.insert(games).values({
         name: dbGameName,
         imageUrl: banner, // Use tournament banner as fallback
-      }).returning();
+      });
+      const [newGame] = await db.select().from(games).where(eq(games.id, newGameResult.insertId));
       gameRecord = newGame;
     }
 
@@ -240,9 +244,9 @@ router.post("/tournaments", async (req, res) => {
     // date is "YYYY-MM-DD", time is "HH:MM"
     const matchDateObj = new Date(`${date}T${time}:00`);
 
-    const [newTournament] = await db.insert(tournaments).values({
+    const [tournamentResult] = await db.insert(tournaments).values({
       name: title,
-      gameId: gameRecord.id,
+      gameId: gameRecord!.id,
       organizerId: adminUser.id, 
       prizePool: parseInt(prizePool) * 100, // paise
       entryFee: parseInt(entryFee),
@@ -254,7 +258,8 @@ router.post("/tournaments", async (req, res) => {
       upiId: upiId || null,
       paymentQrUrl: paymentQrUrl || null,
       status: "REGISTRATION_OPEN",
-    }).returning();
+    });
+    const [newTournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentResult.insertId));
 
     res.json(newTournament);
   } catch (error) {
@@ -276,10 +281,11 @@ router.post("/announcements", async (req, res) => {
       return res.status(500).json({ error: "Admin user not found" });
     }
     
-    const [newAnnouncement] = await db.insert(announcements).values({
+    const [announcementResult] = await db.insert(announcements).values({
       title,
       content
-    }).returning();
+    });
+    const [newAnnouncement] = await db.select().from(announcements).where(eq(announcements.id, announcementResult.insertId));
     
     res.json(newAnnouncement);
   } catch (error) {
@@ -400,8 +406,8 @@ router.post("/tournaments/:id/room", async (req, res) => {
 
       if (tournament) {
         for (const player of confirmedPlayers) {
-          if (player.email) {
-            sendRoomDetailsEmail(player.email, player.teamName || player.captainName, tournament.name, roomId, roomPassword).catch(console.error);
+          if (player.contactEmail) {
+            sendRoomDetailsEmail(player.contactEmail, player.teamName || player.captainName || "Team", tournament.name, roomId, roomPassword).catch(console.error);
           }
         }
       }

@@ -9,7 +9,7 @@ router.use(authenticate);
 
 router.post("/:registrationId/submit-proof", async (req: AuthRequest, res: Response) => {
   try {
-    const registrationId = parseInt(req.params.registrationId);
+    const registrationId = parseInt(req.params.registrationId as string);
     const { upiId, utrNumber, screenshotUrl, payerName, amount } = req.body;
     
     // Verify the registration belongs to this user
@@ -21,7 +21,7 @@ router.post("/:registrationId/submit-proof", async (req: AuthRequest, res: Respo
       return res.status(404).json({ error: "Registration not found" });
     }
 
-    const [payment] = await db.insert(payments).values({
+    const [result] = await db.insert(payments).values({
       registrationId,
       upiId,
       utrNumber,
@@ -30,7 +30,9 @@ router.post("/:registrationId/submit-proof", async (req: AuthRequest, res: Respo
       amount,
       status: 'UNDER_REVIEW',
       submittedAt: new Date(),
-    }).returning();
+    });
+    
+    const [payment] = await db.select().from(payments).where(eq(payments.id, result.insertId));
 
     await db.update(registrations).set({ status: 'PAYMENT_REVIEW' }).where(eq(registrations.id, registrationId));
 

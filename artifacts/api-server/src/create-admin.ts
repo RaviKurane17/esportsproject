@@ -7,8 +7,8 @@ import bcrypt from "bcryptjs";
 async function createAdmin() {
   console.log("Creating admin account...");
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@nexarena.com";
-    const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+    const adminEmail = process.env.ADMIN_EMAIL || "google@gmail.com";
+    const adminPass = process.env.ADMIN_PASSWORD || "Oneplus@17";
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(adminPass, salt);

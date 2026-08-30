@@ -246,7 +246,7 @@ router.post("/tournaments/:id/register", async (req, res) => {
     }
 
     // Now create registration
-    const [registration] = await db.insert(registrationsTable).values({
+    const [result] = await db.insert(registrationsTable).values({
       tournamentId: dbTournament.id,
       teamName: body.teamName,
       captainName: body.captainName,
@@ -254,7 +254,9 @@ router.post("/tournaments/:id/register", async (req, res) => {
       contactEmail: body.email,
       inGameId: body.inGameId,
       status: "PENDING_PAYMENT"
-    }).returning();
+    });
+    
+    const [registration] = await db.select().from(registrationsTable).where(eq(registrationsTable.id, result.insertId));
 
     // Create Payment record with screenshot and UTR
     await db.insert(paymentsTable).values({
@@ -266,7 +268,7 @@ router.post("/tournaments/:id/register", async (req, res) => {
     });
 
     // Send confirmation email asynchronously (no await)
-    sendConfirmationEmail(body.email, body.teamName || body.captainName, dbTournament.title).catch(console.error);
+    sendConfirmationEmail(body.email, body.teamName || body.captainName, dbTournament.name).catch(console.error);
 
     res.status(201).json({ id: registration.id.toString(), tournamentId: params.id });
   } catch (error) {

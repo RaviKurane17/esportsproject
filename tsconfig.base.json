@@ -8,7 +8,7 @@
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": false,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -21,6 +21,7 @@
     "skipLibCheck": true,
     "target": "es2022",
     "types": [],
-    "customConditions": ["workspace"]
+    "customConditions": ["workspace"],
+    "esModuleInterop": true
   }
 }
