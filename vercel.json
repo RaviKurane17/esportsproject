@@ -3,10 +3,6 @@
   "outputDirectory": "artifacts/weekly-local-tournament/dist/public",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://nexarena-api.onrender.com/api/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
