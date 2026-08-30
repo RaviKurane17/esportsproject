@@ -21,8 +21,8 @@ import {
   tournaments,
   type Registration,
 } from "./tournament-data";
-import { eq } from "drizzle-orm";
-import { db, tournaments as tournamentsTable, games as gamesTable } from "@workspace/db";
+import { eq, and, notInArray, sql } from "drizzle-orm";
+import { db, tournaments as tournamentsTable, games as gamesTable, registrations as registrationsTable, payments as paymentsTable, results as resultsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 const registrations: Registration[] = [];
@@ -39,10 +39,16 @@ router.get("/tournaments", async (req, res) => {
     // Fetch all real tournaments from database joined with game
     const dbTournaments = await db.select({
       tournament: tournamentsTable,
-      game: gamesTable
+      game: gamesTable,
+      registeredCount: sql<number>`count(${registrationsTable.id})::int`
     })
     .from(tournamentsTable)
-    .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id));
+    .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id))
+    .leftJoin(registrationsTable, and(
+      eq(registrationsTable.tournamentId, tournamentsTable.id),
+      notInArray(registrationsTable.status, ['CANCELLED', 'REFUNDED'])
+    ))
+    .groupBy(tournamentsTable.id, gamesTable.id);
 
     // Map them to the frontend expected type (TournamentDetail)
     const mapped = dbTournaments.map(row => {
@@ -62,6 +68,10 @@ router.get("/tournaments", async (req, res) => {
         accent = "#8f7cff";
       }
 
+      const participants = (row.registeredCount || 0) * row.tournament.teamSize;
+      const status = row.tournament.status === 'REGISTRATION_OPEN' ? 'OPEN' : row.tournament.status;
+      const registrationStatus = participants >= row.tournament.maxSlots ? 'FULL' : 'AVAILABLE';
+
       return {
         id: row.tournament.id.toString(),
         title: row.tournament.name,
@@ -72,11 +82,11 @@ router.get("/tournaments", async (req, res) => {
         time: row.tournament.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
         entryFee: row.tournament.entryFee,
         prizePool: row.tournament.prizePool / 100, // Zod expects number
-        participants: 0, // Zod expects 'participants', not 'currentParticipants'
+        participants, // Zod expects 'participants', not 'currentParticipants'
         maxParticipants: row.tournament.maxSlots,
         banner: row.tournament.bannerUrl || "/banners/banner1.png",
-        status: row.tournament.status === 'REGISTRATION_OPEN' ? 'OPEN' : row.tournament.status,
-        registrationStatus: 'AVAILABLE', // Required by Zod
+        status,
+        registrationStatus, // Required by Zod
         entryType: row.tournament.entryFee > 0 ? "PAID" : "FREE",
         currency: "INR",
         teamSize: row.tournament.teamSize,
@@ -116,11 +126,17 @@ router.get("/tournaments/:id", async (req, res) => {
 
     const [dbRow] = await db.select({
       tournament: tournamentsTable,
-      game: gamesTable
+      game: gamesTable,
+      registeredCount: sql<number>`count(${registrationsTable.id})::int`
     })
     .from(tournamentsTable)
     .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id))
-    .where(eq(tournamentsTable.id, tournamentId));
+    .leftJoin(registrationsTable, and(
+      eq(registrationsTable.tournamentId, tournamentsTable.id),
+      notInArray(registrationsTable.status, ['CANCELLED', 'REFUNDED'])
+    ))
+    .where(eq(tournamentsTable.id, tournamentId))
+    .groupBy(tournamentsTable.id, gamesTable.id);
 
     if (!dbRow) {
       return res.status(404).json({ error: "Tournament not found" });
@@ -144,6 +160,8 @@ router.get("/tournaments/:id", async (req, res) => {
       accent = "#8f7cff";
     }
 
+    const participants = (dbRow.registeredCount || 0) * t.teamSize;
+    
     const mapped = {
       id: t.id.toString(),
       title: t.name,
@@ -154,11 +172,11 @@ router.get("/tournaments/:id", async (req, res) => {
       time: t.matchDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       entryFee: t.entryFee,
       prizePool: t.prizePool / 100,
-      participants: 0,
+      participants,
       maxParticipants: t.maxSlots,
       banner: t.bannerUrl || "/banners/banner1.png",
       status: t.status === 'REGISTRATION_OPEN' ? 'OPEN' : t.status,
-      registrationStatus: 'AVAILABLE',
+      registrationStatus: participants >= t.maxSlots ? 'FULL' : 'AVAILABLE',
       entryType: t.entryFee > 0 ? "PAID" : "FREE",
       currency: "INR",
       teamSize: t.teamSize,
@@ -187,7 +205,7 @@ router.get("/tournaments/:id", async (req, res) => {
   }
 });
 
-import { games as gamesTable, tournaments as tournamentsTable, registrations as registrationsTable, payments as paymentsTable, results as resultsTable, db } from "@workspace/db";
+
 
 router.post("/tournaments/:id/register", async (req, res) => {
   try {
@@ -205,6 +223,21 @@ router.post("/tournaments/:id/register", async (req, res) => {
 
     if (!dbTournament) {
       return res.status(404).json({ error: "Tournament not found" });
+    }
+
+    // Check capacity
+    const [{ registeredCount }] = await db.select({
+      registeredCount: sql<number>`count(${registrationsTable.id})::int`
+    })
+    .from(registrationsTable)
+    .where(and(
+      eq(registrationsTable.tournamentId, tournamentId),
+      notInArray(registrationsTable.status, ['CANCELLED', 'REFUNDED'])
+    ));
+
+    const participants = (registeredCount || 0) * dbTournament.teamSize;
+    if (participants + dbTournament.teamSize > dbTournament.maxSlots) {
+      return res.status(400).json({ error: "Tournament is full" });
     }
 
     // Now create registration

@@ -319,16 +319,25 @@ export default function TournamentDetail() {
                 </div>
                 
                 <Button 
-                  className="mt-8 w-full h-14 bg-primary hover:bg-primary/90 text-white text-base shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-[1.02]" 
+                  className={`mt-8 w-full h-14 ${(tournament.registrationStatus as string) === 'FULL' ? 'bg-white/10 text-muted-foreground border border-white/10' : 'bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_hsla(var(--primary),0.4)] transition-all hover:scale-[1.02]'} text-base`}
                   onClick={() => { setStep(1); setModal(true); }} 
                   disabled={tournament.registrationStatus !== 'AVAILABLE'}
                 >
-                  Register your Squad <ArrowRight size={18} className="ml-2" />
+                  {(tournament.registrationStatus as string) === 'FULL' 
+                    ? 'Registration Full' 
+                    : `Register your ${tournament.format || 'Squad'}`}
+                  {(tournament.registrationStatus as string) !== 'FULL' && <ArrowRight size={18} className="ml-2 inline-block" />}
                 </Button>
                 
-                <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-                  <LockKeyhole size={14} className="text-secondary" /> Registration closes {tournament.registrationDeadline}
-                </p>
+                {(tournament.registrationStatus as string) === 'FULL' ? (
+                  <p className="mt-6 text-center text-xs text-[#ff5c73] font-bold">
+                    Registration is full. Wait for next tournament.
+                  </p>
+                ) : (
+                  <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+                    <LockKeyhole size={14} className="text-secondary" /> Registration closes {tournament.registrationDeadline}
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -416,7 +425,7 @@ export default function TournamentDetail() {
               <div className="flex items-start justify-between mb-8">
                 <div>
                   <p className="font-mono-ui text-xs font-bold uppercase tracking-[.2em] text-primary">
-                    {step === 1 ? 'Step 1 of 2: Squad Details' : step === 2 ? 'Step 2 of 2: Payment' : 'Registration Complete'}
+                    {step === 1 ? 'Step 1 of 2: Team Details' : step === 2 ? 'Step 2 of 2: Payment' : 'Registration Complete'}
                   </p>
                   <h2 className="mt-3 font-display text-4xl font-bold tracking-[-.04em] text-white">
                     {step === 1 ? 'Lock in your slot.' : step === 2 ? 'Confirm Payment' : 'You are all set!'}
@@ -434,8 +443,8 @@ export default function TournamentDetail() {
                 <form onSubmit={handleNextStep}>
                   <div className="grid gap-5 sm:grid-cols-2">
                     <label>
-                      <span className="mb-2 block text-xs font-bold text-muted-foreground">Squad / Team Name</span>
-                      <input required type="text" value={form.teamName} onChange={(e) => updateField('teamName', e.target.value)} placeholder="Enter squad name" className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition-colors focus:border-primary focus:bg-white/10" />
+                      <span className="mb-2 block text-xs font-bold text-muted-foreground">Team Name</span>
+                      <input required type="text" value={form.teamName} onChange={(e) => updateField('teamName', e.target.value)} placeholder="Enter team name" className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition-colors focus:border-primary focus:bg-white/10" />
                     </label>
                     <label>
                       <span className="mb-2 block text-xs font-bold text-muted-foreground">Captain Name</span>
