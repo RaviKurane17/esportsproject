@@ -7,19 +7,19 @@ async function seed() {
   
   // Insert games
   for (const game of games) {
-    const [insertedGame] = await db.insert(gamesTable).values({
-      name: game.title,
-      slug: game.slug,
-      coverUrl: game.coverImage,
-    }).returning();
+    const [result] = await db.insert(gamesTable).values({
+      name: game.name,
+      imageUrl: `/images/games/${game.slug}.png`,
+    });
+    const gameId = result.insertId;
     
     // Insert tournaments for this game
-    const gameTournaments = tournaments.filter(t => t.gameSlug === game.slug);
-    for (const t of gameTournaments) {
+    const gameTournaments = tournaments.filter((t: any) => t.gameSlug === game.slug);
+    for (const t of gameTournaments as any) {
       await db.insert(tournamentsTable).values({
         name: t.title,
-        gameId: insertedGame.id,
-        organizerId: 9999, // Dummy admin ID
+        gameId: gameId,
+        organizerId: 1, // Assumes user ID 1 exists!
         description: `${t.game} Tournament`,
         prizePool: parseInt(t.prizePool.replace(/[^0-9]/g, '')) * 100, // paise
         entryFee: t.entryFee,

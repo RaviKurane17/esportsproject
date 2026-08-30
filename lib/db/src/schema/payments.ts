@@ -1,19 +1,17 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
 import { registrations } from "./registrations";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const paymentStatusEnum = pgEnum('payment_status', ['PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'REFUND_PENDING', 'REFUNDED']);
-
-export const payments = pgTable("payments", {
-  id: serial("id").primaryKey(),
-  registrationId: integer("registration_id").references(() => registrations.id).notNull(),
-  amount: integer("amount").notNull(), // in paise or smallest currency unit
-  upiId: text("upi_id"),
-  utrNumber: text("utr_number"),
+export const payments = mysqlTable("payments", {
+  id: int("id").autoincrement().primaryKey(),
+  registrationId: int("registration_id").references(() => registrations.id).notNull(),
+  amount: int("amount").notNull(), // in paise or smallest currency unit
+  upiId: varchar("upi_id", { length: 255 }),
+  utrNumber: varchar("utr_number", { length: 255 }),
   screenshotUrl: text("screenshot_url"),
-  payerName: text("payer_name"),
-  status: paymentStatusEnum("status").default('PENDING').notNull(),
+  payerName: varchar("payer_name", { length: 255 }),
+  status: mysqlEnum('status', ['PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED', 'REFUND_PENDING', 'REFUNDED']).default('PENDING').notNull(),
   rejectionReason: text("rejection_reason"),
   submittedAt: timestamp("submitted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

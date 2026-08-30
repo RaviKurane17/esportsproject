@@ -1,33 +1,31 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
 import { games } from "./games";
 import { users } from "./users";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const tournamentStatusEnum = pgEnum('tournament_status', ['UPCOMING', 'REGISTRATION_OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED']);
-
-export const tournaments = pgTable("tournaments", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  gameId: integer("game_id").references(() => games.id).notNull(),
-  organizerId: integer("organizer_id").references(() => users.id).notNull(),
+export const tournaments = mysqlTable("tournaments", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  gameId: int("game_id").references(() => games.id).notNull(),
+  organizerId: int("organizer_id").references(() => users.id).notNull(),
   description: text("description"),
   bannerUrl: text("banner_url"),
-  prizePool: integer("prize_pool").notNull(), // in paise or smallest currency unit
-  entryFee: integer("entry_fee").notNull(), // in paise or smallest currency unit
-  maxSlots: integer("max_slots").notNull(),
-  teamSize: integer("team_size").notNull().default(1),
-  format: text("format"),
+  prizePool: int("prize_pool").notNull(), // in paise or smallest currency unit
+  entryFee: int("entry_fee").notNull(), // in paise or smallest currency unit
+  maxSlots: int("max_slots").notNull(),
+  teamSize: int("team_size").notNull().default(1),
+  format: varchar("format", { length: 255 }),
   rules: text("rules"),
   matchDate: timestamp("match_date").notNull(),
   registrationOpens: timestamp("registration_opens"),
   registrationCloses: timestamp("registration_closes"),
-  upiId: text("upi_id"),
+  upiId: varchar("upi_id", { length: 255 }),
   paymentQrUrl: text("payment_qr_url"),
   resultImageUrl: text("result_image_url"),
-  roomId: text("room_id"),
-  roomPassword: text("room_password"),
-  status: tournamentStatusEnum("status").default('UPCOMING').notNull(),
+  roomId: varchar("room_id", { length: 255 }),
+  roomPassword: varchar("room_password", { length: 255 }),
+  status: mysqlEnum('status', ['UPCOMING', 'REGISTRATION_OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED']).default('UPCOMING').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

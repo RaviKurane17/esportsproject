@@ -42,7 +42,7 @@ router.get("/tournaments", async (req, res) => {
     const dbTournaments = await db.select({
       tournament: tournamentsTable,
       game: gamesTable,
-      registeredCount: sql<number>`count(${registrationsTable.id})::int`
+      registeredCount: sql<number>`CAST(count(${registrationsTable.id}) AS UNSIGNED)`
     })
     .from(tournamentsTable)
     .innerJoin(gamesTable, eq(tournamentsTable.gameId, gamesTable.id))

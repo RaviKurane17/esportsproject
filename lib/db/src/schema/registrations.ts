@@ -1,26 +1,24 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
 import { users } from "./users";
 import { tournaments } from "./tournaments";
 import { teams } from "./teams";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const registrationStatusEnum = pgEnum('registration_status', ['PENDING_PAYMENT', 'PAYMENT_REVIEW', 'CONFIRMED', 'CANCELLED', 'REFUNDED']);
-
-export const registrations = pgTable("registrations", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id), // Optional for guests
-  teamId: integer("team_id").references(() => teams.id), // Optional for guests
-  tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
+export const registrations = mysqlTable("registrations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").references(() => users.id), // Optional for guests
+  teamId: int("team_id").references(() => teams.id), // Optional for guests
+  tournamentId: int("tournament_id").references(() => tournaments.id).notNull(),
   
   // Guest Squad Details
-  teamName: text("team_name"),
-  captainName: text("captain_name"),
-  contactWhatsApp: text("contact_whatsapp"),
-  contactEmail: text("contact_email"),
-  inGameId: text("in_game_id"),
+  teamName: varchar("team_name", { length: 255 }),
+  captainName: varchar("captain_name", { length: 255 }),
+  contactWhatsApp: varchar("contact_whatsapp", { length: 50 }),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  inGameId: varchar("in_game_id", { length: 255 }),
 
-  status: registrationStatusEnum("status").default('PENDING_PAYMENT').notNull(),
+  status: mysqlEnum('status', ['PENDING_PAYMENT', 'PAYMENT_REVIEW', 'CONFIRMED', 'CANCELLED', 'REFUNDED']).default('PENDING_PAYMENT').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

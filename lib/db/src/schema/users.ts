@@ -1,18 +1,16 @@
-import { pgTable, text, serial, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, int, timestamp, mysqlEnum } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const roleEnum = pgEnum('role', ['USER', 'ORGANIZER', 'ADMIN']);
-
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  fullName: text("full_name").notNull(),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  phone: text("phone"),
+export const users = mysqlTable("users", {
+  id: int("id").autoincrement().primaryKey(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }),
   passwordHash: text("password_hash").notNull(),
-  gameUid: text("game_uid"),
-  role: roleEnum("role").default('USER').notNull(),
+  gameUid: varchar("game_uid", { length: 255 }),
+  role: mysqlEnum('role', ['USER', 'ORGANIZER', 'ADMIN']).default('USER').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
